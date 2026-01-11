@@ -1,4 +1,5 @@
 <<<<<<< HEAD
+<<<<<<< HEAD
 <h1 align="center">🚀 Laravel 12 Boilerplate</h1>
 <p align="center">
 Production-ready Laravel backend with Authentication, Roles & Permissions, Activity Log, Real-time Chat (Reverb), Stripe Billing, Queues, Scheduler, Redis, Firebase FCM, and Clean Architecture.
@@ -1226,6 +1227,8 @@ echo.private(`conversations.${conversationId}`).whisper("typing", {
 | RN cannot connect      | Using localhost       | Use 10.0.2.2 / device IP |
 | Presence empty         | Returned boolean only | Return user data array   |
 =======
+=======
+>>>>>>> 606b71b63acccddfecf0aeeb029cfae2df68a29e
 # nails-backend
 
 
@@ -1319,4 +1322,7 @@ For open source projects, say how it is licensed.
 
 ## Project status
 If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.
+<<<<<<< HEAD
+>>>>>>> 606b71b63acccddfecf0aeeb029cfae2df68a29e
+=======
 >>>>>>> 606b71b63acccddfecf0aeeb029cfae2df68a29e
