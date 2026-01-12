@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\Api\V1\Admin\ProductController;
+use App\Http\Controllers\Api\V1\Admin\WebhookController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\V1\Auth\AuthController;
 use App\Http\Controllers\Api\V1\Auth\PasswordController;
@@ -22,6 +24,9 @@ use App\Http\Controllers\Api\V1\Payment\SubscriptionController;
 //     '/v1/stripe/webhook',
 //     [WebhookController::class, 'handleWebhook']
 // )->name('cashier.webhook');
+
+// Shopify Webhook Route
+Route::post('/webhooks/shopify/products', [WebhookController::class, 'handleProductWebhook']);
 
 // --- Public Routes (Authentication) ---
 Route::prefix('v1/auth')->group(function () {
@@ -134,6 +139,12 @@ Route::middleware('auth:sanctum', 'throttle:api')->prefix('v1')->group(function 
         Route::post('/{notification}/mark-as-read', [NotificationController::class, 'markAsRead'])->name('mark-as-read');
         Route::post('/mark-all-as-read', [NotificationController::class, 'markAllAsRead'])->name('mark-all-as-read');
         Route::delete('/{notification}', [NotificationController::class, 'destroy'])->name('destroy');
+    });
+
+
+    Route::prefix('admin')->group(function () {
+        Route::get('/products', [ProductController::class, 'index']); // Get List
+        Route::post('/products/sync', [ProductController::class, 'sync']); // Manual Sync Button
     });
 
     Route::fallback(function () {

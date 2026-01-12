@@ -3,8 +3,10 @@
 namespace App\Observers;
 
 use App\Services\BaseService;
+
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 
 class BaseObserver
 {
@@ -20,6 +22,7 @@ class BaseObserver
 
     public function updated(Model $model): void
     {
+        Log::info('BaseObserver updated called for model: ' . get_class($model) . ' with ID: ' . $model->getKey());
         $service = $this->getServiceForModel($model);
         if ($service) {
             $service->clearItemCache($model);
@@ -58,11 +61,10 @@ class BaseObserver
         $serviceClass = str_replace('\\Models\\', '\\Services\\', $modelClass) . 'Service';
 
         if (class_exists($serviceClass)) {
-            
+
             return app($serviceClass);
         }
 
         return null;
     }
 }
-

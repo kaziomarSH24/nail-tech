@@ -2,7 +2,9 @@
 
 namespace App\Providers;
 
-use Illuminate\Support\ServiceProvider;
+use App\Models\Product;
+use App\Observers\ProductObserver;
+use Illuminate\Foundation\Support\Providers\EventServiceProvider as ServiceProvider;
 
 class EventServiceProvider extends ServiceProvider
 {
@@ -18,6 +20,12 @@ class EventServiceProvider extends ServiceProvider
             'Illuminate\Auth\Listeners\SendEmailVerificationNotification',
         ],
     ];
+
+    //Observers
+    protected $observers = [
+        Product::class => ProductObserver::class,
+    ];
+
     /**
      * Register services.
      */
@@ -31,6 +39,6 @@ class EventServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        parent::boot();
     }
 }
