@@ -2,7 +2,9 @@
 
 namespace Database\Seeders;
 
+use App\Models\User;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Hash;
 use Spatie\Permission\Models\Role;
 use Spatie\Permission\Models\Permission;
 
@@ -13,24 +15,32 @@ class RolesAndPermissionsSeeder extends Seeder
      */
     public function run(): void
     {
-        // Reset the cache
         app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
 
-        // Create permissions
-        Permission::create(['name' => 'create posts']);
-        Permission::create(['name' => 'edit posts']);
-        Permission::create(['name' => 'delete posts']);
-        Permission::create(['name' => 'publish posts']);
 
-        // Create role and assign permissions
-        $roleEditor = Role::create(['name' => 'editor']);
-        $roleEditor->givePermissionTo(['create posts', 'edit posts', 'publish posts']);
+        $roleSuperAdmin = Role::firstOrCreate(['name' => 'super_admin', 'guard_name' => 'web']);
+        $roleAdmin = Role::firstOrCreate(['name' => 'admin', 'guard_name' => 'web']);
+        $roleUser = Role::firstOrCreate(['name' => 'user', 'guard_name' => 'web']);
 
-        // The Admin role has a special permission that gives all abilities
-        $roleAdmin = Role::create(['name' => 'admin']);
-        // No need to assign all permissions to Admin, as we will make them super-admin via Gate
 
-        // Role for regular users
-        Role::create(['name' => 'user']);
+        $superAdminUser = User::firstOrCreate(
+            ['email' => 'superadmin@yopmail.com'],
+            [
+                'name' => 'Super Administrator',
+                'password' => Hash::make('11111111'),
+                'email_verified_at' => now(),
+            ]
+        );
+
+        $superAdminUser->assignRole($roleSuperAdmin);
+        $adminUser = User::firstOrCreate(
+            ['email' => 'admin@yopmail.com'],
+            [
+                'name' => 'Admin User',
+                'password' => Hash::make('11111111'),
+                'email_verified_at' => now(),
+            ]
+        );
+        $adminUser->assignRole($roleAdmin);
     }
 }

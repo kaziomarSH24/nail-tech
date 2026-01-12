@@ -17,6 +17,12 @@ return new class extends Migration
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
+            $table->string('phone')->nullable();
+            $table->string('avatar')->nullable();
+            $table->date('dob')->nullable();
+            $table->string('address')->nullable();
+            $table->enum('status', ['active', 'inactive', 'suspended'])->default('active');
+            $table->integer('current_reward_points')->default(0);
             $table->string('otp')->nullable();
             $table->string('verification_token')->nullable();
             $table->timestamp('otp_expires_at')->nullable();
