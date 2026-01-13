@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\V1\Admin\ProductController;
+use App\Http\Controllers\Api\V1\Admin\StockController;
 use App\Http\Controllers\Api\V1\Admin\WebhookController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\V1\Auth\AuthController;
@@ -145,6 +146,10 @@ Route::middleware('auth:sanctum', 'throttle:api')->prefix('v1')->group(function 
     Route::prefix('admin')->group(function () {
         Route::get('/products', [ProductController::class, 'index']); // Get List
         Route::post('/products/sync', [ProductController::class, 'sync']); // Manual Sync Button
+
+        Route::get('/stocks/overview', [StockController::class, 'index']);
+        Route::get('/stocks/requests', [StockController::class, 'restockRequests']);
+        Route::put('/stocks/requests/{id}', [StockController::class, 'updateRestockStatus']);
     });
 
     Route::fallback(function () {
