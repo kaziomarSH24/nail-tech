@@ -25,3 +25,6 @@ Route::get('/payment/cancel', [CallbackController::class, 'paymentCancel'])->nam
 Route::get('/lander', function (Request $request) {
     return response_success('Lander route hit successfully.', $request->all());
 })->name('lander');
+
+
+Route::view('/upload-test', 'upload-test');

@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\V1\Auth\VerificationController;
 use App\Http\Controllers\Api\V1\Chat\ConversationController;
 use App\Http\Controllers\Api\V1\Chat\GroupController;
 use App\Http\Controllers\Api\V1\Chat\MessageController;
+use App\Http\Controllers\Api\V1\CourseController;
 use App\Http\Controllers\Api\V1\NotificationController;
 use App\Http\Controllers\Api\V1\Payment\InvoiceController;
 use App\Http\Controllers\Api\V1\Payment\OneTimePaymentController;
@@ -150,6 +151,10 @@ Route::middleware('auth:sanctum', 'throttle:api')->prefix('v1')->group(function 
         Route::get('/stocks/overview', [StockController::class, 'index']);
         Route::get('/stocks/requests', [StockController::class, 'restockRequests']);
         Route::put('/stocks/requests/{id}', [StockController::class, 'updateRestockStatus']);
+
+        //** Courses Route */
+        Route::apiResource('courses', CourseController::class)->except(['edit','create']);
+        Route::put('courses/{course}/status', [CourseController::class, 'updatePublishedStatus']);
     });
 
     Route::fallback(function () {

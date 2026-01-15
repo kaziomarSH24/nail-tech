@@ -45,8 +45,9 @@ if [ "$INSTALL_DEV" != "true" ]; then
     php artisan migrate --force
 
 else
+    composer install --ignore-platform-reqs --no-interaction
     # This will run in local environment
-    echo "DEVELOPMENT MODE: Skipping optimizations and migrations."
+    # echo "DEVELOPMENT MODE: Skipping optimizations and migrations."
 fi
 
 # --- Role-Based Execution ---
