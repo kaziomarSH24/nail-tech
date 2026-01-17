@@ -19,6 +19,7 @@ class CourseController extends Controller
     public function __construct(CourseService $courseService)
     {
         $this->courseService = $courseService;
+        $this->authorizeResource(Course::class, 'course');
     }
     /**
      * Display a listing of the resource.
