@@ -3,8 +3,10 @@
 namespace App\Providers;
 
 use App\Models\Course;
+use App\Models\Lesson;
 use App\Models\Product;
 use App\Observers\CourseObserver;
+use App\Observers\LessonsObserver;
 use App\Observers\ProductObserver;
 use Illuminate\Foundation\Support\Providers\EventServiceProvider as ServiceProvider;
 
@@ -27,6 +29,7 @@ class EventServiceProvider extends ServiceProvider
     protected $observers = [
         Product::class => ProductObserver::class,
         Course::class =>  CourseObserver::class,
+        Lesson::class => LessonsObserver::class,
     ];
 
     /**
