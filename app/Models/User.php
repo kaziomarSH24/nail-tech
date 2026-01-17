@@ -6,6 +6,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Storage;
 use Spatie\Permission\Traits\HasRoles;
 use Laravel\Sanctum\HasApiTokens;
 use Laravel\Cashier\Billable;
@@ -22,17 +23,18 @@ class User extends Authenticatable
      *
      * @var list<string>
      */
-    protected $fillable = [
-        'name',
-        'email',
-        'password',
-        'otp',
-        'otp_expires_at',
-        'verification_token',
-        'email_verified_at',
-        'is_active',
-        'fcm_token',
-    ];
+    protected $guarded = [];
+    // protected $fillable = [
+    //     'name',
+    //     'email',
+    //     'password',
+    //     'otp',
+    //     'otp_expires_at',
+    //     'verification_token',
+    //     'email_verified_at',
+    //     'is_active',
+    //     'fcm_token',
+    // ];
 
     /**
      * The attributes that should be hidden for serialization.
@@ -74,5 +76,21 @@ class User extends Authenticatable
             ->logOnlyDirty() //log only the changed fields
             ->setDescriptionForEvent(fn(string $eventName) => "User has been {$eventName}")
             ->useLogName('user_activity');
+    }
+
+     //get avatar
+    public function getAvatarAttribute($value)
+    {
+        $fullName = $this->name;
+
+        if (!empty($this->last_name)) {
+            $fullName .= '+' . $this->last_name;
+        }
+
+        $encodedName = urlencode($fullName);
+
+        return $value
+            ?  Storage::disk('public')->url($value)
+            : "https://ui-avatars.com/api/?background=random&name={$encodedName}&bold=true";
     }
 }
