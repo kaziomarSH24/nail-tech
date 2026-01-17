@@ -8,76 +8,101 @@ use Illuminate\Support\Facades\Storage;
 use Pion\Laravel\ChunkUpload\Receiver\FileReceiver;
 use Pion\Laravel\ChunkUpload\Handler\HandlerFactory;
 use Pion\Laravel\ChunkUpload\Exceptions\UploadMissingFileException;
+use Pion\Laravel\ChunkUpload\Exceptions\UploadFailedException;
 
 trait ChunkUploadTrait
 {
     /**
-     * Handles the chunk upload process.
+     * Handles the chunk upload process with validation.
      *
      * @param Request $request
-     * @param string $inputName - The name of the file input field (e.g., 'video_file')
-     * @param string $directory - The directory where the final file should be saved
-     * @param string $disk - The storage disk (public, s3, etc.)
-     * @return JsonResponse|string - Returns progress JSON (if loading) or final file path (string) if done.
+     * @param string $inputName
+     * @param string $directory
+     * @param string $disk
+     * @param array $allowedExtensions (Optional: ['mp4', 'mov', 'avi'])
+     * @return JsonResponse|string|array
      */
-    public function handleChunkUpload(Request $request, string $inputName, string $directory, string $disk = 'public')
+    public function handleChunkUpload(Request $request, string $inputName, string $directory, string $disk = 'public', array $allowedExtensions = [])
     {
-        // 1. Initialize the receiver
         $receiver = new FileReceiver($inputName, $request, HandlerFactory::classFromRequest($request));
 
-        // 2. Check if the file was uploaded
         if ($receiver->isUploaded() === false) {
             throw new UploadMissingFileException();
         }
 
-        // 3. Receive the chunk
         $save = $receiver->receive();
 
-        // 4. Check if the upload is finished (all chunks received)
+        // Check if the upload has finished (100%)
         if ($save->isFinished()) {
-            return $this->saveFinishedFile($save->getFile(), $directory, $disk);
+            $file = $save->getFile();
+
+            // Security: Check Extension (Backend Validation)
+            if (!empty($allowedExtensions)) {
+                $extension = $file->getClientOriginalExtension();
+                if (!in_array(strtolower($extension), $allowedExtensions)) {
+                    // Delete the temp file if invalid
+                    unlink($file->getPathname());
+                    return response()->json([
+                        'ok' => false,
+                        'message' => 'Invalid file type. Allowed: ' . implode(', ', $allowedExtensions)
+                    ], 422);
+                }
+            }
+
+            return $this->saveFinishedFile($file, $directory, $disk);
         }
 
-        // 5. If not finished, return the progress percentage to frontend
+        // Return progress
         $handler = $save->handler();
 
         return response()->json([
             "done" => $handler->getPercentageDone(),
-            "status" => true
+            "ok" => true,
+            "message" => "Uploading..."
         ]);
     }
 
     /**
-     * Saves the completed file to the final destination.
-     *
-     * @param \Illuminate\Http\UploadedFile $file
-     * @param string $directory
-     * @param string $disk
-     * @return string - Final file path
+     * Saves the completed file.
      */
-    protected function saveFinishedFile($file, string $directory, string $disk): string
+    protected function saveFinishedFile($file, string $directory, string $disk)
     {
         $fileName = $this->createUniqueFilename($file);
 
-        // Move the file from the chunk temp directory to the final destination
-        // We use putFileAs to stream the file if possible or move it
-        Storage::disk($disk)->putFileAs($directory, $file, $fileName);
+        // Stream copy directly to final disk (Supports S3 large files)
+        $path = $directory . '/' . $fileName;
 
-        // Delete the temporary file created by the package
+        // Use stream to avoid memory issues with large files
+        $stream = fopen($file->getPathname(), 'r+');
+        Storage::disk($disk)->put($path, $stream, 'public'); // Visibility 'public' set kora holo
+        fclose($stream);
+
+        // Get file info BEFORE deleting the temp file
+        $mimeType = $file->getMimeType();
+        $size = $file->getSize();
+
+        // Delete temporary chunk file
         unlink($file->getPathname());
 
-        return $directory . '/' . $fileName;
+        // Return detailed response array (Better for API)
+        return response()->json([
+            'path' => $path,
+            'url' => Storage::disk($disk)->url($path), // Full URL for immediate preview
+            'name' => $fileName,
+            'mime_type' => $mimeType,
+            'size' => $size,
+            'done' => 100,
+            'ok' => true,
+            'message' => 'Upload complete'
+        ]);
     }
 
-    /**
-     * Helper to create a unique filename.
-     */
     protected function createUniqueFilename($file): string
     {
         $extension = $file->getClientOriginalExtension();
-        $filename = str_replace("." . $extension, "", $file->getClientOriginalName()); // Filename without extension
-        $filename .= "_" . md5(time()) . "." . $extension;
+        $originalName = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
+        $safeName = \Illuminate\Support\Str::slug($originalName);
 
-        return $filename;
+        return $safeName . "_" . time() . "." . $extension;
     }
 }

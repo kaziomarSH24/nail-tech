@@ -153,8 +153,15 @@ Route::middleware('auth:sanctum', 'throttle:api')->prefix('v1')->group(function 
         Route::put('/stocks/requests/{id}', [StockController::class, 'updateRestockStatus']);
 
         //** Courses Route */
-        Route::apiResource('courses', CourseController::class)->except(['edit','create']);
+        Route::apiResource('courses', CourseController::class)->except(['edit', 'create']);
         Route::put('courses/{course}/status', [CourseController::class, 'updatePublishedStatus']);
+        //video upload
+        Route::post('/courses/upload-video', [CourseController::class, 'uploadCourseVideo'])
+            ->withoutMiddleware(['throttle', 'throttle:api']);
+        // Add Lesson to Course
+        Route::post('/courses/{id}/lessons', [CourseController::class, 'addLesson']);
+        Route::put('/courses/{courseId}/lessons/{lessonId}', [CourseController::class, 'updateLesson']);
+        Route::delete('/courses/{courseId}/lessons/{lessonId}', [CourseController::class, 'deleteLesson']);
     });
 
     Route::fallback(function () {

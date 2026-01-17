@@ -14,6 +14,19 @@ class LessonResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        return parent::toArray($request);
+        return [
+            'id' => $this->id,
+            'course_id' => $this->course_id,
+            'title' => $this->title,
+            'description' => $this->description,
+            'video_type' => $this->video_type,
+            'video_path' => $this->video_path,
+            'duration_minutes' => $this->duration,
+            'sort_order' => $this->sort_order,
+            'is_free_preview' => $this->is_free_preview,
+            'created_at' => $this->created_at,
+            'updated_at' => $this->updated_at,
+            'video_url' => url($this->video_url),
+        ];
     }
 }
