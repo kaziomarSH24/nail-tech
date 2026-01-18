@@ -25,12 +25,12 @@ class EventServiceProvider extends ServiceProvider
         ],
     ];
 
-    //Observers
-    protected $observers = [
-        Product::class => ProductObserver::class,
-        Course::class =>  CourseObserver::class,
-        Lesson::class => LessonsObserver::class,
-    ];
+    // //Observers
+    // protected $observers = [
+    //     Product::class => [ProductObserver::class],
+    //     Course::class => [CourseObserver::class],
+    //     Lesson::class => [LessonsObserver::class],
+    // ];
 
     /**
      * Register services.
@@ -46,5 +46,10 @@ class EventServiceProvider extends ServiceProvider
     public function boot(): void
     {
         parent::boot();
+
+        //observers
+        Course::observe(CourseObserver::class);
+        Product::observe(ProductObserver::class);
+        Lesson::observe(LessonsObserver::class);
     }
 }

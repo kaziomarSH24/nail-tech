@@ -16,6 +16,7 @@ class BaseObserver
 
     public function created(Model $model): void
     {
+        Log::info('BaseObserver created called for model: ' . get_class($model) . ' with ID: ' . $model->getKey());
         $this->flushCollectionCache($model);
     }
 
@@ -32,6 +33,7 @@ class BaseObserver
 
     public function deleted(Model $model): void
     {
+        Log::info('BaseObserver deleted called for model: ' . get_class($model) . ' with ID: ' . $model->getKey());
         $service = $this->getServiceForModel($model);
         if ($service) {
             $service->clearItemCache($model);
