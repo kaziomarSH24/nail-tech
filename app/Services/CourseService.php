@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Services\BaseService;
 use App\Models\Course;
+use App\Models\Enrollment;
 use Spatie\QueryBuilder\AllowedFilter;
 use App\Models\Lesson;
 use Illuminate\Database\Eloquent\Model;
@@ -43,30 +44,18 @@ class CourseService extends BaseService
     }
 
 
-    // public function hasAccessToCourse($user, $courseId): bool
-    // {
-    //     // Option 1: Using 'Enrollment' table (Best Practice)
-    //     // Check if user has an active enrollment record
-    //     $hasEnrollment = Enrollment::where('user_id', $user->id)
-    //         ->where('course_id', $courseId)
-    //         ->exists();
+    public function hasAccessToCourse($user, $courseId): bool
+    {
+        // Check if user has an active enrollment record
+        $hasEnrollment = Enrollment::where('user_id', $user->id)
+            ->where('course_id', $courseId)
+            ->exists();
 
-    //     if ($hasEnrollment) {
-    //         return true;
-    //     }
-
-    //     // Option 2: Using 'Order' table (Alternative)
-    //     // Check if user has a completed order for this course
-    //     // $hasPurchased = \App\Models\Order::where('user_id', $user->id)
-    //     //     ->where('status', 'completed')
-    //     //     ->whereHas('items', function ($query) use ($courseId) {
-    //     //         $query->where('course_id', $courseId);
-    //     //     })->exists();
-
-    //     // return $hasPurchased;
-
-    //     return false;
-    // }
+        if ($hasEnrollment) {
+            return true;
+        }
+        return false;
+    }
 
     // Define allowed sorts
     protected function getAllowedSorts(): array
@@ -93,4 +82,41 @@ class CourseService extends BaseService
             'is_free_preview' => $data['is_free_preview'] ?? false,
         ]);
     }
+
+
+        /**
+     * Get Popular Courses
+     */
+    public function getPopularCourses($limit = 5, $paginate = false)
+    {
+        $query = Course::where('is_published', true)
+            ->withCount('enrollments') 
+            ->orderBy('enrollments_count', 'desc');
+
+        if ($paginate) {
+            return $query->paginate($limit);
+        }
+
+        return $query->take($limit)->get();
+    }
+
+    /**
+     * Get Trending Courses
+     */
+    public function getTrendingCourses($limit = 5, $paginate = false)
+    {
+        $query = Course::where('is_published', true)
+            ->withCount(['enrollments' => function ($q) {
+                // count only enrollments in last 30 days
+                $q->where('created_at', '>=', now()->subDays(30));
+            }])
+            ->orderBy('enrollments_count', 'desc');
+
+        if ($paginate) {
+            return $query->paginate($limit);
+        }
+
+        return $query->take($limit)->get();
+    }
+
 }

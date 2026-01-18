@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Storage;
 class Lesson extends Model
 {
     protected $guarded = [];
+    protected $appends = ['video_url'];
 
     public function course()
     {
@@ -23,7 +24,4 @@ class Lesson extends Model
         // Local/S3 Storage Link
         return Storage::disk(config('filesystems.default'))->url($this->video_path);
     }
-
-    // JSON response a video_url pathabo
-    protected $appends = ['video_url'];
 }

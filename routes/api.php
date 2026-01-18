@@ -19,13 +19,13 @@ use App\Http\Controllers\Api\V1\Payment\PaymentMethodController;
 use App\Http\Controllers\Api\V1\Payment\RefundController;
 use App\Http\Controllers\Api\V1\Payment\StripePortalController;
 use App\Http\Controllers\Api\V1\Payment\SubscriptionController;
+use App\Http\Controllers\Api\V1\User\CourseController as UserCourseController;
+use Laravel\Cashier\Http\Controllers\WebhookController as ControllersWebhookController;
 
-
-
-// Route::post(
-//     '/v1/stripe/webhook',
-//     [WebhookController::class, 'handleWebhook']
-// )->name('cashier.webhook');
+Route::post(
+    '/v1/stripe/webhook',
+    [ControllersWebhookController::class, 'handleWebhook']
+)->name('cashier.webhook');
 
 // Shopify Webhook Route
 Route::post('/webhooks/shopify/products', [WebhookController::class, 'handleProductWebhook']);
@@ -163,6 +163,18 @@ Route::middleware('auth:sanctum', 'throttle:api')->prefix('v1')->group(function 
         Route::put('/courses/{courseId}/lessons/{lessonId}', [CourseController::class, 'updateLesson']);
         Route::delete('/courses/{courseId}/lessons/{lessonId}', [CourseController::class, 'deleteLesson']);
     });
+
+    //Users Course Routes
+    Route::get('/courses', [UserCourseController::class, 'index']);
+    Route::get('/courses/{id}', [UserCourseController::class, 'show']);
+    Route::post('/courses/{courseId}/enroll', [UserCourseController::class, 'enroll']);
+    // Route::get('/courses/{courseId}/lessons/{lessonId}/access', [UserCourseController::class, 'accessLesson']);
+    // --- Home Page Routes ---
+    Route::get('/home', [UserCourseController::class, 'getHomeData']);
+
+    // --- See All Routes (With Pagination) ---
+    Route::get('/courses/popular', [UserCourseController::class, 'getPopularCourses']);
+    Route::get('/courses/trending', [UserCourseController::class, 'getTrendingCourses']);
 
     Route::fallback(function () {
         return response_error('The requested API endpoint does not exist.', [], 404);
