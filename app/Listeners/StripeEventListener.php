@@ -2,21 +2,24 @@
 
 namespace App\Listeners;
 
+use App\Models\Enrollment;
 use App\Models\Transaction;
 use App\Models\User;
-use Carbon\Carbon;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Laravel\Cashier\Events\WebhookReceived;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
-use Laravel\Cashier\Subscription;
 use Stripe\Stripe;
 use Stripe\SetupIntent;
 use Stripe\PaymentMethod;
 use Exception;
+use Throwable;
 
 class StripeEventListener implements ShouldQueue
 {
+    /**
+     * Handle the event.
+     */
     /**
      * Handles incoming Stripe webhook events.
      */
@@ -34,260 +37,143 @@ class StripeEventListener implements ShouldQueue
     }
 
     /**
-     * Handles subscription creation idempotently.
+     * Handle Checkout Session Completed
+     * (Supports both 'payment' for courses and 'setup' for saving cards)
      */
-    protected function handleCustomerSubscriptionCreated(array $payload): void
-    {
-        $data = $payload['data']['object'];
-        $user = $this->getUserFromPayload($payload);
-
-        if ($user) {
-            Subscription::updateOrCreate(
-                ['stripe_id' => $data['id']],
-                [
-                    'user_id' => $user->id,
-                    'type' => $data['items']['data'][0]['price']['nickname'] ?? 'default',
-                    'stripe_price' => $data['items']['data'][0]['price']['id'],
-                    'quantity' => $data['items']['data'][0]['quantity'],
-                    'stripe_status' => $data['status'],
-                    'trial_ends_at' => isset($data['trial_end']) ? Carbon::createFromTimestamp($data['trial_end']) : null,
-                    'ends_at' => $data['cancel_at_period_end'] ? Carbon::createFromTimestamp($data['current_period_end']) : null,
-                ]
-            );
-        }
-    }
-
     /**
-     * Handles subscription updates to keep local state in sync.
+     * Handle Checkout Session Completed
      */
-    protected function handleCustomerSubscriptionUpdated(array $payload): void
-    {
-        $data = $payload['data']['object'];
-        $subscription = Subscription::where('stripe_id', $data['id'])->first();
-
-        if ($subscription) {
-            $subscription->stripe_status = $data['status'];
-            $subscription->trial_ends_at = isset($data['trial_end']) ? Carbon::createFromTimestamp($data['trial_end']) : $subscription->trial_ends_at;
-            $subscription->ends_at = $data['cancel_at_period_end'] ? Carbon::createFromTimestamp($data['current_period_end']) : null;
-            $subscription->save();
-        }
-    }
-
-    /**
-     * Handles 'invoice.payment_succeeded' and 'charge.succeeded' events.
-     */
-    protected function handleInvoicePaymentSucceeded(array $payload): void
-    {
-        $this->_processSuccessfulPayment($payload);
-    }
-
-    protected function handleChargeSucceeded(array $payload): void
-    {
-        $this->_processSuccessfulPayment($payload);
-    }
-
-    /**
-     * Private helper method to process successful payments.
-     */
-    private function _processSuccessfulPayment(array $payload): void
-    {
-        $data = $payload['data']['object'];
-        $user = $this->getUserFromPayload($payload);
-
-        if (!$user) return;
-
-        $payableId = null;
-        $payableType = null;
-
-        if (isset($data['subscription']) && !is_null($data['subscription'])) {
-            $subscription = Subscription::where('stripe_id', $data['subscription'])->first();
-            if ($subscription) {
-                $payableId = $subscription->id;
-                $payableType = Subscription::class;
-            }
-        } else {
-            $metadata = $data['metadata'] ?? [];
-            $payableId = $metadata['payable_id'] ?? null;
-            $payableType = $metadata['payable_type'] ?? null;
-        }
-
-        if ($payableId && $payableType && class_exists($payableType)) {
-            $lineItem = $data['lines']['data'][0] ?? null;
-
-            $curatedMetadata = [
-                'invoice_id' => $data['invoice'] ?? null,
-                'charge_id' => $data['charge'] ?? $data['id'] ?? null,
-                'receipt_url' => $data['receipt_url'] ?? null,
-                'billing_reason' => $data['billing_reason'] ?? 'manual',
-                'plan_description' => $lineItem['description'] ?? null,
-                'billing_period_start' => isset($lineItem['period']['start']) ? Carbon::createFromTimestamp($lineItem['period']['start'])->toIso8601String() : null,
-                'billing_period_end' => isset($lineItem['period']['end']) ? Carbon::createFromTimestamp($lineItem['period']['end'])->toIso8601String() : null,
-                'hosted_invoice_url' => $data['hosted_invoice_url'] ?? null,
-                'invoice_pdf' => $data['invoice_pdf'] ?? null,
-            ];
-
-            Transaction::updateOrCreate(
-                ['gateway_transaction_id' => $data['id']],
-                [
-                    'user_id' => $user->id,
-                    'payable_id' => $payableId,
-                    'payable_type' => $payableType,
-                    'gateway' => 'stripe',
-                    'payment_intent_id' => $data['payment_intent'] ?? null,
-                    'amount' => ($data['amount_paid'] ?? $data['amount_received'] ?? $data['amount']) / 100,
-                    'currency' => $data['currency'],
-                    'status' => 'success',
-                    'metadata' => $curatedMetadata,
-                ]
-            );
-            Log::info('Transaction successfully created/updated.', ['gateway_transaction_id' => $data['id']]);
-        } else {
-            Log::warning('Skipping transaction creation. Conditions not met.', [
-                'payableId_exists' => !is_null($payableId),
-                'payableType_exists' => !is_null($payableType),
-            ]);
-        }
-    }
-
-    /**
-     * Best Practice: Handle the 'refund.created' event as the source of truth for refunds.
-     */
-    protected function handleRefundCreated(array $payload): void
-    {
-        $refund = $payload['data']['object']; // The payload IS the refund object
-        $paymentIntentId = $refund['payment_intent'];
-        $chargeId = $refund['charge'];
-
-        // Find the transaction using payment_intent_id or fallback to charge_id
-        $transaction = Transaction::where('payment_intent_id', $paymentIntentId)->first();
-        if (!$transaction) {
-            Log::info('Could not find transaction by payment_intent_id, attempting fallback with charge_id.', ['payment_intent_id' => $paymentIntentId]);
-            $transaction = Transaction::where('gateway_transaction_id', $chargeId)->first();
-        }
-
-        if ($transaction) {
-            $newMetadata = $transaction->metadata;
-            $newMetadata['refund_id'] = $refund['id']; // re_...
-            $newMetadata['refunded_at'] = Carbon::createFromTimestamp($refund['created'])->toIso8601String();
-            $newMetadata['refunded_amount'] = $refund['amount'] / 100;
-            $newMetadata['refund_reason'] = $refund['reason'];
-
-            $transaction->metadata = $newMetadata;
-
-            // Update status based on the refund status from the refund object
-            if ($refund['status'] === 'succeeded') {
-                // You may need to fetch the charge to check if it's partially or fully refunded
-                $transaction->status = 'refunded'; // Or implement partial refund logic
-            }
-
-            $transaction->save();
-            Log::info('Transaction updated with refund details.', ['transaction_id' => $transaction->id, 'refund_id' => $refund['id']]);
-        } else {
-            Log::warning('Could not find a matching transaction to update with refund details.', [
-                'payment_intent_id' => $paymentIntentId,
-                'charge_id' => $chargeId,
-            ]);
-        }
-    }
-
-    /**
-     * This method can be kept as a simple fallback or for logging purposes,
-     * but the main logic is now in handleRefundCreated.
-     */
-    protected function handleChargeRefunded(array $payload): void
-    {
-        Log::info('Charge refunded event received. Details are handled by refund.created.', ['charge_id' => $payload['data']['object']['id']]);
-        // Optional: You could still update status here as a fallback if needed.
-        $charge = $payload['data']['object'];
-        $transaction = Transaction::where('payment_intent_id', $charge['payment_intent'])->first();
-        if ($transaction && $transaction->status !== 'refunded') {
-            $transaction->status = $charge['refunded'] ? 'refunded' : 'partially_refunded';
-            $transaction->save();
-        }
-    }
-
-    /**
-     * Handles subscription deletion events.
-     */
-    protected function handleCustomerSubscriptionDeleted(array $payload): void
-    {
-        $user = $this->getUserFromPayload($payload);
-        $subscriptionData = $payload['data']['object'];
-
-        if ($user) {
-            activity()
-                ->causedBy($user)
-                ->withProperty('stripe_subscription_id', $subscriptionData['id'])
-                ->log('Subscription was cancelled via Stripe webhook.');
-        }
-    }
-
-    /**
-     * Helper method to retrieve User model from payload.
-     */
-    private function getUserFromPayload(array $payload): ?User
-    {
-        $customerId = $payload['data']['object']['customer'] ?? null;
-        if (!$customerId) {
-            return null;
-        }
-        return User::where('stripe_id', $customerId)->first();
-    }
-
-
     protected function handleCheckoutSessionCompleted(array $payload): void
     {
         $session = $payload['data']['object'];
+        $mode = $session['mode'] ?? 'unknown';
+        $metadata = $session['metadata'] ?? [];
 
-        // We only care about sessions in 'setup' mode here.
-        if ($session['mode'] !== 'setup') {
+        Log::info("Stripe Checkout Completed. Mode: {$mode}", ['id' => $session['id']]);
+        Log::info("Checkout Session Metadata: " . json_encode($metadata));
+
+        // [FIXED LINE] Array ব্যবহার করা হয়েছে
+        Log::info("Checkout Session Metadata single: " . $metadata['type']);
+
+        // 1. Handle Setup Mode (Save Card)
+        if ($mode === 'setup') {
+            $this->handleSetupMode($session);
             return;
         }
 
+        // 2. Handle Payment Mode (Course Purchase)
+        if ($mode === 'payment') {
+            $this->logTransaction($session, $metadata);
+
+            if (($metadata['type'] ?? '') === 'course_purchase') {
+                $this->enrollUserInCourse($metadata);
+            }
+        }
+    }
+
+    /**
+     * Handle Payment Intent Succeeded
+     */
+    protected function handlePaymentIntentSucceeded(array $payload): void
+    {
+        $intent = $payload['data']['object'];
+        $metadata = $intent['metadata'] ?? [];
+
+        Log::info("Stripe Payment Intent Succeeded", ['id' => $intent['id']]);
+        Log::info("Payment Intent Metadata:", $metadata);
+
+        $this->logTransaction($intent, $metadata);
+
+        if (($metadata['type'] ?? '') === 'course_purchase_intent') {
+            $this->enrollUserInCourse($metadata);
+        }
+    }
+
+    // --- Helper Methods ---
+
+    private function handleSetupMode($session)
+    {
         try {
             $user = User::where('stripe_id', $session['customer'])->first();
-            if (!$user) {
-                Log::warning('User not found for completed setup session.', ['customer_id' => $session['customer']]);
-                return;
-            }
+            if (!$user) return;
 
             Stripe::setApiKey(config('cashier.secret'));
             $setupIntent = SetupIntent::retrieve($session['setup_intent']);
-            $newPaymentMethodId = $setupIntent->payment_method;
+            $pm = PaymentMethod::retrieve($setupIntent->payment_method);
 
-            // Best Practice: Check for duplicate cards using fingerprint.
-            $newPaymentMethod = PaymentMethod::retrieve($newPaymentMethodId);
-            $newCardFingerprint = $newPaymentMethod->card->fingerprint;
+            $fingerprint = $pm->card->fingerprint ?? null;
 
-            $existingPaymentMethods = $user->paymentMethods();
-            foreach ($existingPaymentMethods as $existingMethod) {
-                if ($existingMethod->card->fingerprint === $newCardFingerprint) {
-                    Log::info('Duplicate payment method detected via setup session. Skipping.', [
-                        'user_id' => $user->id,
-                        'fingerprint' => $newCardFingerprint,
-                    ]);
-                    // If a duplicate is found, we simply do nothing.
-                    return;
+            if ($fingerprint) {
+                foreach ($user->paymentMethods() as $method) {
+                    if (($method->card->fingerprint ?? '') === $fingerprint) {
+                        Log::info('Duplicate card ignored.');
+                        return;
+                    }
                 }
             }
 
-            // If no duplicate was found, add the new payment method.
-            $user->addPaymentMethod($newPaymentMethodId);
+            $user->addPaymentMethod($setupIntent->payment_method);
 
-            // If the user had no default payment method, this new one becomes the default.
             if (!$user->hasDefaultPaymentMethod()) {
-                $user->updateDefaultPaymentMethod($newPaymentMethodId);
+                $user->updateDefaultPaymentMethod($setupIntent->payment_method);
+            }
+        } catch (Throwable $e) {
+            Log::error("Setup Mode Error: " . $e->getMessage());
+        }
+    }
+
+    private function logTransaction($data, $metadata)
+    {
+        try {
+            $userId = $metadata['user_id'] ?? null;
+            if (!$userId) {
+                Log::warning("Transaction skipped: No user_id in metadata");
+                return;
             }
 
-            Log::info('New payment method from setup session added successfully.', [
-                'user_id' => $user->id,
-                'payment_method_id' => $newPaymentMethodId
+            $amountRaw = $data['amount_received'] ?? $data['amount_total'] ?? 0;
+            $amount = $amountRaw / 100;
+
+            Transaction::create([
+                'user_id' => $userId,
+                'payable_type' => $metadata['payable_type'] ?? null,
+                'payable_id' => $metadata['payable_id'] ?? null,
+                'gateway' => 'stripe',
+                'gateway_transaction_id' => $data['id'],
+                'amount' => $amount,
+                'currency' => $data['currency'] ?? 'usd',
+                'status' => 'success',
+                'metadata' => $data, // Store full stripe object as JSON
             ]);
-        } catch (Exception $e) {
-            Log::error('Error handling checkout.session.completed for setup mode.', [
-                'session_id' => $session['id'],
-                'error' => $e->getMessage()
-            ]);
+
+            Log::info("Transaction created for User {$userId}");
+        } catch (Throwable $e) {
+            Log::error('Failed to log transaction: ' . $e->getMessage());
+        }
+    }
+
+    private function enrollUserInCourse($metadata)
+    {
+        try {
+            $userId = $metadata['user_id'] ?? null;
+            $courseId = $metadata['payable_id'] ?? null;
+
+            if ($userId && $courseId) {
+                $enrollment = Enrollment::firstOrCreate(
+                    ['user_id' => $userId, 'course_id' => $courseId],
+                    ['progress_percent' => 0, 'completed' => false]
+                );
+
+                if ($enrollment->wasRecentlyCreated) {
+                    Log::info("NEW Enrollment created for User {$userId} in Course {$courseId}");
+                } else {
+                    Log::info("User {$userId} was ALREADY enrolled in Course {$courseId}");
+                }
+            } else {
+                Log::warning("Enrollment skipped: Missing user_id or payable_id in metadata", $metadata);
+            }
+        } catch (Throwable $e) {
+            Log::error('Failed to enroll user: ' . $e->getMessage());
         }
     }
 }

@@ -17,12 +17,16 @@ class CourseResource extends JsonResource
         return [
             'id' => $this->id,
             'title' => $this->title,
+            'instructor' => $this->instructor,
             'description' => $this->description,
             'thumbnail' => url('storage/' . $this->thumbnail),
+            'price' => $this->price,
+            'reward_points' => $this->reward_points,
             'is_published' => $this->is_published,
+            'duration' => $this->duration,
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
-            'lessons_count' => $this->whenLoaded('lessonsCount'),
+            'lessons_count' => $this->when($this->lessons_count !== null, $this->lessons_count),
             'lessons' => LessonResource::collection($this->whenLoaded('lessons')),
         ];
     }
