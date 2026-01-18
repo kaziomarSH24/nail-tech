@@ -168,14 +168,14 @@ Route::middleware('auth:sanctum', 'throttle:api')->prefix('v1')->group(function 
     Route::get('/courses', [UserCourseController::class, 'index']);
     Route::get('/courses/{id}', [UserCourseController::class, 'show']);
     Route::post('/courses/{courseId}/enroll', [UserCourseController::class, 'enroll']);
+    Route::post('/courses/{courseId}/lessons/{lessonId}/complete', [UserCourseController::class, 'completeLesson']);
+    Route::get('/course/enrolled', [UserCourseController::class, 'getEnrolledCourses']);
     // Route::get('/courses/{courseId}/lessons/{lessonId}/access', [UserCourseController::class, 'accessLesson']);
     // --- Home Page Routes ---
     Route::get('/home', [UserCourseController::class, 'getHomeData']);
-
     // --- See All Routes (With Pagination) ---
-    Route::get('/courses/popular', [UserCourseController::class, 'getPopularCourses']);
-    Route::get('/courses/trending', [UserCourseController::class, 'getTrendingCourses']);
-
+    Route::get('/course/popular', [UserCourseController::class, 'getPopularCourses']);
+    Route::get('/course/trending', [UserCourseController::class, 'getTrendingCourses']);
     Route::fallback(function () {
         return response_error('The requested API endpoint does not exist.', [], 404);
     });

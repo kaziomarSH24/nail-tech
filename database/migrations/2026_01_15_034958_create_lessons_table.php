@@ -20,7 +20,7 @@ return new class extends Migration
             // Video Info
             $table->enum('video_type', ['upload', 'url'])->default('upload');
             $table->string('video_path'); // File Path or YouTube URL
-            $table->integer('duration_minutes')->nullable();
+            $table->integer('duration')->nullable();
 
             $table->integer('sort_order')->default(0);
             $table->boolean('is_free_preview')->default(false);

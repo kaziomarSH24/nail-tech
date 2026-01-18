@@ -26,7 +26,10 @@ class CourseResource extends JsonResource
             'duration' => $this->duration,
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
-            'lessons_count' => $this->when($this->lessons_count !== null, $this->lessons_count),
+            'total_lessons' => $this->lessons_count ?? $this->lessons->count(),
+            'progress_percent' => $this->when(isset($this->progress_percent), $this->progress_percent),
+            'is_completed' => $this->when(isset($this->is_completed), $this->is_completed),
+            'enrolled_at' => $this->when(isset($this->enrolled_at), $this->enrolled_at),
             'lessons' => LessonResource::collection($this->whenLoaded('lessons')),
         ];
     }

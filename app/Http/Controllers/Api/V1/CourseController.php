@@ -174,7 +174,7 @@ class CourseController extends Controller
             'description' => $data['description'] ?? $lesson->description,
             'video_type' => $data['video_type'],
             'video_path' => $finalPath,
-            'duration_minutes' => $data['duration'] ?? $lesson->duration_minutes,
+            'duration' => $data['duration'] ?? $lesson->duration,
             'sort_order' => $data['sort_order'] ?? $lesson->sort_order,
             'is_free_preview' => $data['is_free_preview'] ?? $lesson->is_free_preview,
         ]);

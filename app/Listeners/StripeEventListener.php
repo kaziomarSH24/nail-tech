@@ -52,7 +52,7 @@ class StripeEventListener implements ShouldQueue
         Log::info("Stripe Checkout Completed. Mode: {$mode}", ['id' => $session['id']]);
         Log::info("Checkout Session Metadata: " . json_encode($metadata));
 
-        // [FIXED LINE] Array ব্যবহার করা হয়েছে
+
         Log::info("Checkout Session Metadata single: " . $metadata['type']);
 
         // 1. Handle Setup Mode (Save Card)

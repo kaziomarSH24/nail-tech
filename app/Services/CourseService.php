@@ -77,7 +77,7 @@ class CourseService extends BaseService
             'description' => $data['description'] ?? null,
             'video_type' => $data['video_type'],
             'video_path' => $finalPath,
-            'duration_minutes' => $data['duration'] ?? 0,
+            'duration' => $data['duration'] ?? 0,
             'sort_order' => $course->lessons()->count() + 1,
             'is_free_preview' => $data['is_free_preview'] ?? false,
         ]);
@@ -90,7 +90,7 @@ class CourseService extends BaseService
     public function getPopularCourses($limit = 5, $paginate = false)
     {
         $query = Course::where('is_published', true)
-            ->withCount('enrollments') 
+            ->withCount('enrollments')
             ->orderBy('enrollments_count', 'desc');
 
         if ($paginate) {

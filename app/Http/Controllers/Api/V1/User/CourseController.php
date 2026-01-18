@@ -9,6 +9,7 @@ use App\Models\Enrollment;
 use App\Services\CourseService;
 use App\Services\PaymentService;
 use Illuminate\Http\Request;
+use App\Models\LessonProgress;
 
 class CourseController extends Controller
 {
@@ -20,6 +21,94 @@ class CourseController extends Controller
     {
         $this->courseService = $courseService;
         $this->paymentService = $paymentService;
+    }
+
+
+    public function getEnrolledCourses(Request $request)
+    {
+        $user = auth()->user();
+        $limit = $request->input('per_page', 10);
+
+        // Fetch enrolled courses through Enrollment model with pagination
+        $enrollments = Enrollment::with(['course.lessons' => function ($q) {
+            $q->select('id', 'course_id', 'title', 'duration', 'is_free_preview');
+        }])
+            ->where('user_id', $user->id)
+            ->latest()
+            ->paginate($limit);
+
+        // Transform the collection to return a clean structure
+        $courses = $enrollments->map(function ($enrollment) {
+            $course = $enrollment->course;
+            if ($course) {
+
+                $course->progress_percent = $enrollment->progress_percent;
+                $course->is_completed = $enrollment->completed;
+                $course->enrolled_at = $enrollment->created_at;
+            }
+            return $course;
+        })->filter();
+
+        return response()->json([
+            'ok' => true,
+            'message' => 'Enrolled courses retrieved successfully.',
+            'data' => CourseResource::collection($courses),
+            'pagination' => [
+                'total' => $enrollments->total(),
+                'per_page' => $enrollments->perPage(),
+                'current_page' => $enrollments->currentPage(),
+                'last_page' => $enrollments->lastPage(),
+                'from' => $enrollments->firstItem(),
+                'to' => $enrollments->lastItem(),
+            ],
+        ]);
+    }
+
+    /**
+     * Mark Lesson as Completed & Update Progress
+     */
+    public function completeLesson(Request $request, $courseId, $lessonId)
+    {
+        $user = auth()->user();
+        $course = Course::findOrFail($courseId);
+
+        // Mark lesson as complete using Model
+        LessonProgress::updateOrInsert(
+            [
+                'user_id' => $user->id,
+                'lesson_id' => $lessonId,
+                'course_id' => $courseId
+            ],
+            [
+                'completed_at' => now(),
+                'updated_at' => now(),
+            ]
+        );
+
+        // Calculate Progress using Model
+        $totalLessons = $course->lessons()->count();
+        $completedLessons = LessonProgress::where('user_id', $user->id)
+            ->where('course_id', $courseId)
+            ->count();
+
+        $percent = $totalLessons > 0 ? round(($completedLessons / $totalLessons) * 100) : 0;
+
+        // Update Enrollment Table
+        $enrollment = Enrollment::where('user_id', $user->id)
+            ->where('course_id', $courseId)
+            ->first();
+
+        if ($enrollment) {
+            $enrollment->update([
+                'progress_percent' => $percent,
+                'completed' => $percent === 100
+            ]);
+        }
+
+        return response_success('Lesson completed.', [
+            'progress' => $percent,
+            'is_course_completed' => $percent === 100
+        ]);
     }
 
     /**
@@ -158,21 +247,30 @@ class CourseController extends Controller
     }
 
     /**
-     * Get Home Screen Data (My Courses, Popular, Trending)
+     * Get Home Screen Data 
      */
     public function getHomeData()
     {
         $user = auth()->user();
 
         // My Subscriptions
-        $myCourses = Enrollment::with(['course.lessons' => function ($q) {
-            $q->select('id', 'course_id', 'title', 'duration_minutes');
+        $enrollments = Enrollment::with(['course.lessons' => function ($q) {
+            $q->select('id', 'course_id', 'title', 'duration');
         }])
             ->where('user_id', $user->id)
             ->latest()
             ->take(5)
-            ->get()
-            ->pluck('course');
+            ->get();
+
+        $myCourses = $enrollments->map(function ($enrollment) {
+            $course = $enrollment->course;
+            if ($course) {
+                $course->progress_percent = $enrollment->progress_percent;
+                $course->is_completed = $enrollment->completed;
+                $course->enrolled_at = $enrollment->created_at;
+            }
+            return $course;
+        })->filter();
 
         // Popular Courses
         $popularCourses = $this->courseService->getPopularCourses(5);
