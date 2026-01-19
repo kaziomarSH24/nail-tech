@@ -21,6 +21,7 @@ use App\Http\Controllers\Api\V1\Payment\StripePortalController;
 use App\Http\Controllers\Api\V1\Payment\SubscriptionController;
 use App\Http\Controllers\Api\V1\User\AppointmentControll;
 use App\Http\Controllers\Api\V1\User\CourseController as UserCourseController;
+use App\Http\Controllers\Api\V1\User\FinanceController;
 use Laravel\Cashier\Http\Controllers\WebhookController as ControllersWebhookController;
 
 Route::post(
@@ -179,7 +180,11 @@ Route::middleware('auth:sanctum', 'throttle:api')->prefix('v1')->group(function 
     Route::get('/course/trending', [UserCourseController::class, 'getTrendingCourses']);
 
     //**Appointment Routes */
-    Route::apiResource('appointments', AppointmentControll::class);
+    Route::apiResource('appointments', AppointmentControll::class)->except(['create', 'edit']);
+    //**Finance Records Routes (income tracker) */
+    Route::apiResource('finance-records', FinanceController::class)->except(['create', 'edit']);
+    //analytics data
+    Route::get('finance/analytics', [FinanceController::class, 'getAnalytics']);
 
 
 

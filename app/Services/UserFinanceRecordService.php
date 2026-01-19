@@ -27,9 +27,7 @@ class UserFinanceRecordService extends BaseService
      protected function getAllowedFilters(): array
     {
         return [
-            AllowedFilter::custom('search', new GlobalSearchFilter, 'name','email'),
-            'name',
-            'email',
+            'client_or_vendor_name',
             AllowedFilter::exact('status'),
         ];
     }
@@ -47,7 +45,7 @@ class UserFinanceRecordService extends BaseService
      {
         return [
             'id',
-            'name',
+            'record_date',
             'created_at',
         ];
      }

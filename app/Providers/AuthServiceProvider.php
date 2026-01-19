@@ -3,7 +3,9 @@
 namespace App\Providers;
 
 use App\Models\Conversation;
+use App\Models\UserFinanceRecord;
 use App\Policies\ConversationPolicy;
+use App\Policies\UserFinancePolicy;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 
@@ -17,6 +19,7 @@ class AuthServiceProvider extends ServiceProvider
      */
     protected $policies = [
         Conversation::class => ConversationPolicy::class,
+        // UserFinanceRecord::class => UserFinancePolicy::class,
     ];
 
     /**
@@ -35,5 +38,7 @@ class AuthServiceProvider extends ServiceProvider
         Gate::before(function ($user, $ability) {
             return $user->hasRole('admin') ? true : null;
         });
+
+        // dd($this->policies);
     }
 }

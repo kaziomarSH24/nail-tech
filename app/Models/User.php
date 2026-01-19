@@ -78,7 +78,7 @@ class User extends Authenticatable
             ->useLogName('user_activity');
     }
 
-     //get avatar
+    //get avatar
     public function getAvatarAttribute($value)
     {
         $fullName = $this->name;
@@ -92,5 +92,15 @@ class User extends Authenticatable
         return $value
             ?  Storage::disk('public')->url($value)
             : "https://ui-avatars.com/api/?background=random&name={$encodedName}&bold=true";
+    }
+
+    public function appointments()
+    {
+        return $this->hasMany(UserAppointment::class);
+    }
+
+    public function financeRecords()
+    {
+        return $this->hasMany(UserFinanceRecord::class);
     }
 }
