@@ -5,6 +5,8 @@ namespace App\Providers;
 use App\Models\Course;
 use App\Models\Lesson;
 use App\Models\Product;
+use App\Models\UserAppointment;
+use App\Observers\AppointmentObserver;
 use App\Observers\CourseObserver;
 use App\Observers\LessonsObserver;
 use App\Observers\ProductObserver;
@@ -51,5 +53,6 @@ class EventServiceProvider extends ServiceProvider
         Course::observe(CourseObserver::class);
         Product::observe(ProductObserver::class);
         Lesson::observe(LessonsObserver::class);
+        UserAppointment::observe(AppointmentObserver::class);
     }
 }

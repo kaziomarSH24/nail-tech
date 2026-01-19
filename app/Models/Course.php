@@ -21,7 +21,7 @@ class Course extends Model
     }
     public function lessons()
     {
-        return $this->hasMany(Lesson::class)->orderBy('sort_order');
+        return $this->hasMany(Lesson::class)->orderBy('created_at', 'desc');
     }
 
     //relationship with Enrollment

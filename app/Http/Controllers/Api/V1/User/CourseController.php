@@ -191,63 +191,40 @@ class CourseController extends Controller
         $user = auth()->user();
         $course = Course::where('is_published', true)->findOrFail($courseId);
 
-        //Check if the user is already enrolled
+        //Check if already enrolled
         if ($this->courseService->hasAccessToCourse($user, $courseId)) {
             return response_error('You are already enrolled in this course.', [], 400);
         }
 
-        //Handle Free Course Enrollment
+        //Handle Free Course
         if ($course->price <= 0) {
             Enrollment::firstOrCreate(
                 ['user_id' => $user->id, 'course_id' => $course->id],
                 ['progress_percent' => 0, 'completed' => false]
             );
-
             return response_success('Enrolled successfully in free course.', [], 201);
         }
 
         // Handle Paid Course
-        $request->validate([
-            'payment_method_id' => 'required|string'
-        ]);
-
         $amountInCents = (int) ($course->price * 100);
 
-        $paymentResult = $this->paymentService->createPaymentIntent(
+        $paymentResult = $this->paymentService->initializePayment(
             $user,
             $course,
             $amountInCents,
-            $request->payment_method_id
+            ['type' => 'course_purchase'] // Webhook will use this 'type'
         );
 
         if (!$paymentResult['success']) {
-            return response_error($paymentResult['message'] ?? 'Payment failed.', [], 400);
+            return response_error($paymentResult['message'] ?? 'Payment init failed.', [], 500);
         }
 
-        //Handle 3D Secure (SCA) - If bank requires OTP
-        if (!empty($paymentResult['requires_action'])) {
-            return response_success('Payment requires authentication.', [
-                'requires_action' => true,
-                'client_secret' => $paymentResult['client_secret']
-            ]);
-        }
-
-        //
-        // If payment is successful, enroll the user
-        $paymentStatus = $paymentResult['payment']->status ?? null;
-
-        if ($paymentStatus === 'succeeded') {
-            Enrollment::firstOrCreate(
-                ['user_id' => $user->id, 'course_id' => $course->id],
-                ['progress_percent' => 0, 'completed' => false]
-            );
-        }
-
-        return response_success('Payment successful. You are now enrolled.', []);
+        // Return Data to Frontend (App will use this to open Stripe Modal)
+        return response_success('Payment initialized.', $paymentResult);
     }
 
     /**
-     * Get Home Screen Data 
+     * Get Home Screen Data
      */
     public function getHomeData()
     {
