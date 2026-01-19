@@ -79,12 +79,11 @@ class StripeEventListener implements ShouldQueue
         $intent = $payload['data']['object'];
         $metadata = $intent['metadata'] ?? [];
 
-        Log::info("Stripe Payment Intent Succeeded", ['id' => $intent['id']]);
-        Log::info("Payment Intent Metadata:", $metadata);
-
+        // Log transaction
         $this->logTransaction($intent, $metadata);
 
-        if (($metadata['type'] ?? '') === 'course_purchase_intent') {
+        // Enroll User based on Type
+        if (($metadata['type'] ?? '') === 'course_purchase') {
             $this->enrollUserInCourse($metadata);
         }
     }

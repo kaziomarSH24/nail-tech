@@ -6,7 +6,9 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Log;
 use Laravel\Cashier\Exceptions\IncompletePayment;
 use Exception;
-
+use Stripe\EphemeralKey;
+use Stripe\PaymentIntent;
+use Stripe\Stripe;
 
 class PaymentService
 {
@@ -67,39 +69,54 @@ class PaymentService
      * @param string $paymentMethodId The ID from Stripe frontend (pm_...).
      * @param string $currency Currency code.
      */
-    public function createPaymentIntent(Model $user, Model $payable, int $amount, string $paymentMethodId, string $currency = 'usd')
+    public function initializePayment(Model $user, Model $payable, int $amount, array $customMetadata = [], string $currency = 'usd')
     {
+
+        Stripe::setApiKey(config('cashier.secret'));
+
+        // Ensure User is a Stripe Customer
+        if (!$user->hasStripeId()) {
+            $user->createAsStripeCustomer();
+        }
+
         try {
-            // Charge the user using Cashier
-            $payment = $user->charge(
-                $amount,
-                $paymentMethodId,
-                [
-                    'currency' => strtolower($currency),
-                    'metadata' => [
-                        'payable_type' => get_class($payable),
-                        'payable_id'   => $payable->id,
-                        'user_id'      => $user->id,
-                        'type'         => 'course_purchase_intent'
-                    ],
-                    // Return URL is required for 3D Secure redirects
-                    'return_url' => config('app.frontend_url') . '/payment/return',
-                ]
+            //Prepare Metadata (Merge Default + Custom)
+            $defaultMetadata = [
+                'payable_type' => get_class($payable),
+                'payable_id'   => $payable->id,
+                'user_id'      => $user->id,
+            ];
+            $finalMetadata = array_merge($defaultMetadata, $customMetadata);
+            // Create Ephemeral Key (Required for Mobile App Security)
+            $ephemeralKey = EphemeralKey::create(
+                ['customer' => $user->stripe_id],
+                ['stripe_version' => '2022-11-15'] // Use your Stripe Dashboard version
             );
+
+            // Create Payment Intent
+            $paymentIntent = PaymentIntent::create([
+                'amount' => $amount,
+                'currency' => strtolower($currency),
+                'customer' => $user->stripe_id,
+                'automatic_payment_methods' => [
+                    'enabled' => true,
+                ],
+                'metadata' => $finalMetadata,
+            ]);
 
             return [
                 'success' => true,
-                'payment' => $payment,
-            ];
-        } catch (IncompletePayment $e) {
-            return [
-                'success' => true, 
-                'requires_action' => true,
-                'client_secret' => $e->payment->client_secret,
+                'clientSecret' => $paymentIntent->client_secret, // Key for Frontend
+                'ephemeralKey' => $ephemeralKey->secret,         // Key for App
+                'customerId'   => $user->stripe_id,
+                'publishableKey' => config('cashier.key'),
             ];
         } catch (Exception $e) {
-            Log::error('Stripe Payment Intent Error: ' . $e->getMessage());
-            return ['success' => false, 'message' => 'Could not process payment. ' . $e->getMessage()];
+            Log::error('Payment Init Error: ' . $e->getMessage());
+            return [
+                'success' => false,
+                'message' => 'Payment initialization failed: ' . $e->getMessage()
+            ];
         }
     }
 }

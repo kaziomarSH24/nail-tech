@@ -19,6 +19,7 @@ use App\Http\Controllers\Api\V1\Payment\PaymentMethodController;
 use App\Http\Controllers\Api\V1\Payment\RefundController;
 use App\Http\Controllers\Api\V1\Payment\StripePortalController;
 use App\Http\Controllers\Api\V1\Payment\SubscriptionController;
+use App\Http\Controllers\Api\V1\User\AppointmentControll;
 use App\Http\Controllers\Api\V1\User\CourseController as UserCourseController;
 use Laravel\Cashier\Http\Controllers\WebhookController as ControllersWebhookController;
 
@@ -176,6 +177,23 @@ Route::middleware('auth:sanctum', 'throttle:api')->prefix('v1')->group(function 
     // --- See All Routes (With Pagination) ---
     Route::get('/course/popular', [UserCourseController::class, 'getPopularCourses']);
     Route::get('/course/trending', [UserCourseController::class, 'getTrendingCourses']);
+
+    //**Appointment Routes */
+    Route::apiResource('appointments', AppointmentControll::class);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     Route::fallback(function () {
         return response_error('The requested API endpoint does not exist.', [], 404);
     });
