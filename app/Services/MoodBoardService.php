@@ -4,8 +4,6 @@ namespace App\Services;
 
 use App\Services\BaseService;
 use App\Models\MoodBoard;
-use Spatie\QueryBuilder\AllowedFilter;
-use App\Filters\GlobalSearchFilter;
 use App\Models\MoodBoardImage;
 
 class MoodBoardService extends BaseService

@@ -143,49 +143,8 @@ class CourseController extends Controller
     }
 
     /**
-     * Enroll in a Course (Updated Logic)
+     * Enroll in a Course
      */
-    // public function enroll(Request $request, $courseId)
-    // {
-    //     $user = auth()->user();
-    //     $course = Course::findOrFail($courseId);
-
-    //     // 1. Check if already enrolled
-    //     if ($this->courseService->hasAccessToCourse($user, $courseId)) {
-    //         return response_error('You are already enrolled in this course.', [], 400);
-    //     }
-
-    //     // Free Course Logic (Direct Enroll)
-    //     if ($course->price <= 0) {
-    //         Enrollment::create([
-    //             'user_id' => $user->id,
-    //             'course_id' => $course->id,
-    //             'completed' => false,
-    //             'progress_percent' => 0
-    //         ]);
-
-    //         return response_success('Enrolled successfully in free course.', [], 201);
-    //     }
-
-    //     $amountInCents = (int) ($course->price * 100);
-
-    //     $paymentResult = $this->paymentService->createCheckoutSession(
-    //         $user,
-    //         $course,
-    //         $amountInCents,
-    //         "Enrollment: " . $course->title
-    //     );
-
-    //     if (!$paymentResult['success']) {
-    //         return response_error('Payment initiation failed. Please try again.');
-    //     }
-
-    //     return response_success('Payment session created.', [
-    //         'payment_required' => true,
-    //         'redirect_url' => $paymentResult['redirect_url']
-    //     ]);
-    // }
-
     public function enroll(Request $request, $courseId)
     {
         $user = auth()->user();
@@ -259,12 +218,6 @@ class CourseController extends Controller
             'my_subscriptions' => CourseResource::collection($myCourses),
             'popular_courses'  => CourseResource::collection($popularCourses),
             'trending_courses' => CourseResource::collection($trendingCourses),
-
-            // Banners Data
-            // 'banners' => [
-            //     ['id' => 1, 'image' => 'banner1.jpg', 'link' => '/course/1'],
-            //     ['id' => 2, 'image' => 'banner2.jpg', 'link' => '/products'],
-            // ]
         ]);
     }
 

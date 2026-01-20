@@ -147,8 +147,8 @@ Route::middleware('auth:sanctum', 'throttle:api')->prefix('v1')->group(function 
     });
 
 
-    Route::prefix('admin')->group(function () {
-        Route::get('/products', [ProductController::class, 'index']); // Get List
+    Route::middleware(['role:admin|super_admin'])->prefix('admin')->group(function () {
+        Route::get('/products', [ProductController::class, 'index'])->withoutMiddleware('role:admin|super_admin'); // Get List
         Route::post('/products/sync', [ProductController::class, 'sync']); // Manual Sync Button
 
         Route::get('/stocks/overview', [StockController::class, 'index']);

@@ -13,6 +13,7 @@ class Product extends Model
         'shopify_variant_id' => 'string',
         'price' => 'decimal:2',
         'last_synced_at' => 'datetime',
+        'variants' => 'array',
     ];
 
     protected $appends = ['stock_status'];

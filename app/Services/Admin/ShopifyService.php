@@ -34,6 +34,7 @@ class ShopifyService extends BaseService
     protected function getAllowedFilters(): array
     {
         return [
+            'category',
             'title',
         ];
     }
@@ -62,9 +63,8 @@ class ShopifyService extends BaseService
                 'X-Shopify-Access-Token' => $this->accessToken,
             ])->get($this->baseUrl . '/products.json', [
                 'limit' => 250,
-                'fields' => 'id,title,body_html,images,variants,status'
+                'fields' => 'id,title,body_html,images,variants,status,product_type'
             ]);
-
             if ($response->failed()) return ['success' => false, 'message' => 'Shopify Error'];
 
             $products = $response->json()['products'];
@@ -84,6 +84,7 @@ class ShopifyService extends BaseService
     //Save/Update Single Product (Common Logic)
     public function saveProduct($shopifyData)
     {
+        // dd($shopifyData);
         $image = null;
         if (isset($shopifyData['images']) && count($shopifyData['images']) > 0) {
             $image = $shopifyData['images'][0]['src'];
@@ -93,6 +94,8 @@ class ShopifyService extends BaseService
 
 
         $variant = $shopifyData['variants'][0] ?? [];
+        $variants = $shopifyData['variants'] ?? [];
+        $category = !empty($shopifyData['product_type']) ? $shopifyData['product_type'] : 'Uncategorized';
 
         return Product::updateOrCreate(
             ['shopify_product_id' => $shopifyData['id']],
@@ -100,6 +103,8 @@ class ShopifyService extends BaseService
                 'title' => $shopifyData['title'],
                 'description' => $shopifyData['body_html'] ?? $shopifyData['description'] ?? null,
                 'shopify_variant_id' => $variant['id'] ?? null,
+                'category' => $category,
+                'variants' => $variants,
                 'sku' => $variant['sku'] ?? null,
                 'price' => $variant['price'] ?? 0,
                 'stock_quantity' => $variant['inventory_quantity'] ?? 0,
