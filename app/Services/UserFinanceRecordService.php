@@ -16,6 +16,7 @@ class UserFinanceRecordService extends BaseService
      * @var string
      */
     protected string $modelClass = UserFinanceRecord::class;
+    protected bool $cachePerUser = true;
 
     public function __construct()
     {

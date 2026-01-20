@@ -15,6 +15,7 @@ class UserAppointmentService extends BaseService
      * @var string
      */
     protected string $modelClass = UserAppointment::class;
+    protected bool $cachePerUser = true;
 
     public function __construct()
     {

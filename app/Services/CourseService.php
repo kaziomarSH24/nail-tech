@@ -17,6 +17,7 @@ class CourseService extends BaseService
      * @var string
      */
     protected string $modelClass = Course::class;
+    protected bool $cachePerUser = true;
 
     public function __construct()
     {

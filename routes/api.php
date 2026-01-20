@@ -22,6 +22,7 @@ use App\Http\Controllers\Api\V1\Payment\SubscriptionController;
 use App\Http\Controllers\Api\V1\User\AppointmentControll;
 use App\Http\Controllers\Api\V1\User\CourseController as UserCourseController;
 use App\Http\Controllers\Api\V1\User\FinanceController;
+use App\Http\Controllers\Api\V1\User\MoodBoardController;
 use Laravel\Cashier\Http\Controllers\WebhookController as ControllersWebhookController;
 
 Route::post(
@@ -185,6 +186,15 @@ Route::middleware('auth:sanctum', 'throttle:api')->prefix('v1')->group(function 
     Route::apiResource('finance-records', FinanceController::class)->except(['create', 'edit']);
     //analytics data
     Route::get('finance/analytics', [FinanceController::class, 'getAnalytics']);
+
+    //--- Mood Board Routes ---
+    Route::apiResource('mood-boards', MoodBoardController::class)->except(['create', 'edit']);
+    //get images from album
+    Route::get('mood-boards/{mood_board}/images', [MoodBoardController::class, 'getAlbumImages']);
+    //upload image to album
+    Route::post('mood-boards/images/upload', [MoodBoardController::class, 'uploadImage']);
+    //delete image from album
+    Route::delete('mood-boards/images/{imageId}', [MoodBoardController::class, 'deleteImage']);
 
 
 
