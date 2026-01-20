@@ -27,8 +27,10 @@ class UserAppointmentService extends BaseService
     protected function getAllowedFilters(): array
     {
         return [
-            'appointment_at',
+            'client_name',
             AllowedFilter::exact('status'),
+            //filter[date]=2025-01-01
+            AllowedFilter::scope('date', 'date'),
         ];
     }
 
@@ -43,10 +45,6 @@ class UserAppointmentService extends BaseService
     // Define allowed sorts
     protected function getAllowedSorts(): array
     {
-        return [
-            'id',
-            'appointment_at',
-            'created_at',
-        ];
+        return ['appointment_at', 'created_at'];
     }
 }

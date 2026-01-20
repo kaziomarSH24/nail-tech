@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 
 class UserFinanceRecord extends Model
@@ -16,5 +17,10 @@ class UserFinanceRecord extends Model
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function scopeDateBetween(Builder $query, $start, $end)
+    {
+        return $query->whereBetween('record_date', [$start, $end]);
     }
 }
