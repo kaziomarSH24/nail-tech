@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Builder;
 
 class UserAppointment extends Model
 {
@@ -17,5 +18,11 @@ class UserAppointment extends Model
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    //scope
+    public function scopeDate(Builder $query, $date)
+    {
+        return $query->whereDate('appointment_at', $date);
     }
 }
