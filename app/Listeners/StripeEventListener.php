@@ -3,8 +3,10 @@
 namespace App\Listeners;
 
 use App\Models\Enrollment;
+use App\Models\Order;
 use App\Models\Transaction;
 use App\Models\User;
+use App\Services\Admin\ShopifyService;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Laravel\Cashier\Events\WebhookReceived;
 use Illuminate\Support\Facades\Log;
@@ -81,10 +83,12 @@ class StripeEventListener implements ShouldQueue
 
         // Log transaction
         $this->logTransaction($intent, $metadata);
-
+        $type = $metadata['type'] ?? '';
         // Enroll User based on Type
-        if (($metadata['type'] ?? '') === 'course_purchase') {
+        if ($type === 'course_purchase') {
             $this->enrollUserInCourse($metadata);
+        } elseif ($type === 'shopify_purchase') {
+            $this->processShopifyOrder($metadata);
         }
     }
 
@@ -173,6 +177,32 @@ class StripeEventListener implements ShouldQueue
             }
         } catch (Throwable $e) {
             Log::error('Failed to enroll user: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Helper Method to Handle Shopify Order
+     */
+    private function processShopifyOrder(array $metadata): void
+    {
+        $orderId = $metadata['order_id'] ?? null;
+
+        if (!$orderId) {
+            \Log::error('Stripe Webhook: Order ID missing in metadata for shopify_purchase.');
+            return;
+        }
+        $order = Order::find($orderId);
+        if ($order && $order->status === 'pending') {
+
+            try {
+                $order->update(['status' => 'paid']);
+                $shopifyService = app(ShopifyService::class);
+                $shopifyService->syncOrderToShopify($order);
+
+                \Log::info("Shopify Order Sync Successful for Local Order #{$order->id}");
+            } catch (\Exception $e) {
+                \Log::error("Shopify Order Sync Failed for Local Order #{$order->id}: " . $e->getMessage());
+            }
         }
     }
 }

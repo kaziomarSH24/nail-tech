@@ -23,6 +23,9 @@ use App\Http\Controllers\Api\V1\User\AppointmentControll;
 use App\Http\Controllers\Api\V1\User\CourseController as UserCourseController;
 use App\Http\Controllers\Api\V1\User\FinanceController;
 use App\Http\Controllers\Api\V1\User\MoodBoardController;
+use App\Http\Controllers\Api\V1\User\ShopController;
+use App\Models\Order;
+use Illuminate\Http\Request;
 use Laravel\Cashier\Http\Controllers\WebhookController as ControllersWebhookController;
 
 Route::post(
@@ -31,7 +34,10 @@ Route::post(
 )->name('cashier.webhook');
 
 // Shopify Webhook Route
-Route::post('/webhooks/shopify/products', [WebhookController::class, 'handleProductWebhook']);
+Route::prefix('webhooks/shopify')->group(function () {
+    Route::post('/products', [WebhookController::class, 'handleProductWebhook']);
+    Route::post('/orders', [WebhookController::class, 'handleOrderUpdate']);
+});
 
 // --- Public Routes (Authentication) ---
 Route::prefix('v1/auth')->group(function () {
@@ -197,6 +203,10 @@ Route::middleware('auth:sanctum', 'throttle:api')->prefix('v1')->group(function 
     Route::delete('mood-boards/images/{imageId}', [MoodBoardController::class, 'deleteImage']);
 
 
+    //product checkout
+    Route::post('/shop/checkout', [ShopController::class, 'initiateCheckout'])->name('api.v1.shop.checkout');
+
+
 
 
 
@@ -212,4 +222,30 @@ Route::middleware('auth:sanctum', 'throttle:api')->prefix('v1')->group(function 
     Route::fallback(function () {
         return response_error('The requested API endpoint does not exist.', [], 404);
     });
+});
+Route::post('/test-webhook', function (Request $request) {
+
+    // ম্যানুয়ালি পে-লোড রিসিভ করছি
+    $payload = $request->all();
+    $metadata = $payload['data']['object']['metadata'] ?? [];
+
+    // আপনার লজিক সরাসরি এখানে টেস্ট করব
+    if (($metadata['type'] ?? '') === 'shopify_purchase') {
+
+        $orderId = $metadata['order_id'];
+        $order = Order::find($orderId);
+
+        if ($order && $order->status === 'pending') {
+            $order->update(['status' => 'paid']);
+
+            // Shopify Sync Call
+            $shopifyService = app(\App\Services\Admin\ShopifyService::class);
+            $shopifyService->syncOrderToShopify($order);
+
+            return response()->json(['message' => 'Shopify Order Synced!']);
+        }
+        return response()->json(['message' => 'Order not found or already paid']);
+    }
+
+    return response()->json(['message' => 'Not a shopify purchase']);
 });

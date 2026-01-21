@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Order;
 use App\Services\Admin\ShopifyService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -40,6 +41,55 @@ class WebhookController extends Controller
             return response()->json(['message' => 'Received'], 200);
         } catch (\Exception $e) {
             Log::error('Webhook Failed: ' . $e->getMessage());
+            return response()->json(['message' => 'Error'], 500);
+        }
+    }
+
+    public function handleOrderUpdate(Request $request)
+    {
+        $secret = env('SHOPIFY_WEBHOOK_SECRET');
+        $hmacHeader = $request->header('x-shopify-hmac-sha256');
+        $data = $request->getContent();
+
+        $calculatedHmac = base64_encode(hash_hmac('sha256', $data, $secret, true));
+
+        if (!hash_equals($hmacHeader, $calculatedHmac)) {
+            Log::warning('Shopify Order Webhook Verification Failed!');
+            return response()->json(['message' => 'Unauthorized'], 401);
+        }
+
+        try {
+            $payload = json_decode($data, true); // JSON Decode
+
+            Log::info('Webhook Hit for Order ID: ' . ($payload['id'] ?? 'Unknown'));
+            $shopifyOrderId = $payload['id'];
+            $order = Order::where('shopify_order_id', $shopifyOrderId)->first();
+
+            if ($order) {
+                $fulfillmentStatus = $payload['fulfillment_status'];
+                Log::info("Processing Order #{$order->id}: Fulfillment Status - {$fulfillmentStatus}");
+                if ($fulfillmentStatus === 'fulfilled') {
+                    $order->delivery_status = 'shipped';
+                //partially_fulfilled
+                } elseif ($fulfillmentStatus === 'partial') {
+                    $order->delivery_status = 'partial';
+                } elseif ($fulfillmentStatus === null) {
+                    $order->delivery_status = 'unfulfilled';
+                }
+                $financialStatus = $payload['financial_status'];
+
+                if ($financialStatus === 'refunded') {
+                    $order->status = 'refunded';
+                }
+
+                $order->save();
+
+                Log::info("Order #{$order->id} updated. Delivery: {$order->delivery_status}");
+            }
+
+            return response()->json(['message' => 'Processed']);
+        } catch (\Exception $e) {
+            Log::error('Order Webhook Failed: ' . $e->getMessage());
             return response()->json(['message' => 'Error'], 500);
         }
     }
