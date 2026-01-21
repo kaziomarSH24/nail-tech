@@ -42,6 +42,12 @@ class OrderResource extends JsonResource
             'delivery_status' => $this->delivery_status,
             'display_status' => $displayStatus,
             'status_color' => $statusColor,
+            //traking info
+            'tracking_info' => [
+                'company' => $this->tracking_company, 
+                'number' => $this->tracking_number,   
+                'url' => $this->tracking_url,         
+            ],
 
             // Date Formatting
             'date' => Carbon::parse($this->created_at)->format('d M Y, h:i A'),
@@ -59,7 +65,7 @@ class OrderResource extends JsonResource
     private function formatItems($items)
     {
         if (empty($items)) return [];
-            
+
         return collect($items)->map(function ($item) {
 
             return [

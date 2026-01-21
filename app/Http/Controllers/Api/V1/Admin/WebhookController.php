@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\V1\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Order;
+use App\Notifications\OrderShippedNotification;
 use App\Services\Admin\ShopifyService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -63,14 +64,44 @@ class WebhookController extends Controller
 
             Log::info('Webhook Hit for Order ID: ' . ($payload['id'] ?? 'Unknown'));
             $shopifyOrderId = $payload['id'];
+
             $order = Order::where('shopify_order_id', $shopifyOrderId)->first();
 
             if ($order) {
                 $fulfillmentStatus = $payload['fulfillment_status'];
+
                 Log::info("Processing Order #{$order->id}: Fulfillment Status - {$fulfillmentStatus}");
-                if ($fulfillmentStatus === 'fulfilled') {
-                    $order->delivery_status = 'shipped';
-                //partially_fulfilled
+                $trackingCompany = null;
+                $trackingNumber = null;
+                $trackingUrl = null;
+
+                if (!empty($payload['fulfillments'])) {
+
+                    $latestFulfillment = $payload['fulfillments'][0];
+
+                    $trackingCompany = $latestFulfillment['tracking_company'] ?? null;
+                    $trackingNumber = $latestFulfillment['tracking_number'] ?? null;
+                    $trackingUrl = $latestFulfillment['tracking_url'] ?? null;
+                }
+
+                if ($fulfillmentStatus === 'fulfilled' && $order->delivery_status !== 'shipped') {
+
+                    $order->update([
+                        'delivery_status' => 'shipped',
+                        'tracking_company' => $trackingCompany,
+                        'tracking_number' => $trackingNumber,
+                        'tracking_url' => $trackingUrl,
+                    ]);
+                    if ($order->user) {
+                        try {
+                            
+                            $order->user->notify(new OrderShippedNotification($order));
+                            Log::info("Notification sent to user {$order->user->id}");
+                        } catch (\Exception $e) {
+                            Log::error("Notification Failed: " . $e->getMessage());
+                        }
+                    }
+                    //partially_fulfilled
                 } elseif ($fulfillmentStatus === 'partial') {
                     $order->delivery_status = 'partial';
                 } elseif ($fulfillmentStatus === null) {
