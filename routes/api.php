@@ -23,9 +23,8 @@ use App\Http\Controllers\Api\V1\User\AppointmentControll;
 use App\Http\Controllers\Api\V1\User\CourseController as UserCourseController;
 use App\Http\Controllers\Api\V1\User\FinanceController;
 use App\Http\Controllers\Api\V1\User\MoodBoardController;
+use App\Http\Controllers\Api\V1\User\OrderController;
 use App\Http\Controllers\Api\V1\User\ShopController;
-use App\Models\Order;
-use Illuminate\Http\Request;
 use Laravel\Cashier\Http\Controllers\WebhookController as ControllersWebhookController;
 
 Route::post(
@@ -205,7 +204,9 @@ Route::middleware('auth:sanctum', 'throttle:api')->prefix('v1')->group(function 
 
     //product checkout
     Route::post('/shop/checkout', [ShopController::class, 'initiateCheckout'])->name('api.v1.shop.checkout');
-
+    //order history
+    Route::get('/shop/orders', [OrderController::class, 'index'])->name('api.v1.shop.orders');
+    Route::get('/shop/orders/{order}', [OrderController::class, 'show'])->name('api.v1.shop.orders.details');
 
 
 
@@ -222,30 +223,4 @@ Route::middleware('auth:sanctum', 'throttle:api')->prefix('v1')->group(function 
     Route::fallback(function () {
         return response_error('The requested API endpoint does not exist.', [], 404);
     });
-});
-Route::post('/test-webhook', function (Request $request) {
-
-    // ম্যানুয়ালি পে-লোড রিসিভ করছি
-    $payload = $request->all();
-    $metadata = $payload['data']['object']['metadata'] ?? [];
-
-    // আপনার লজিক সরাসরি এখানে টেস্ট করব
-    if (($metadata['type'] ?? '') === 'shopify_purchase') {
-
-        $orderId = $metadata['order_id'];
-        $order = Order::find($orderId);
-
-        if ($order && $order->status === 'pending') {
-            $order->update(['status' => 'paid']);
-
-            // Shopify Sync Call
-            $shopifyService = app(\App\Services\Admin\ShopifyService::class);
-            $shopifyService->syncOrderToShopify($order);
-
-            return response()->json(['message' => 'Shopify Order Synced!']);
-        }
-        return response()->json(['message' => 'Order not found or already paid']);
-    }
-
-    return response()->json(['message' => 'Not a shopify purchase']);
 });
