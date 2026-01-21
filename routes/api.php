@@ -23,6 +23,8 @@ use App\Http\Controllers\Api\V1\User\AppointmentControll;
 use App\Http\Controllers\Api\V1\User\CourseController as UserCourseController;
 use App\Http\Controllers\Api\V1\User\FinanceController;
 use App\Http\Controllers\Api\V1\User\MoodBoardController;
+use App\Http\Controllers\Api\V1\User\OrderController;
+use App\Http\Controllers\Api\V1\User\ShopController;
 use Laravel\Cashier\Http\Controllers\WebhookController as ControllersWebhookController;
 
 Route::post(
@@ -31,7 +33,10 @@ Route::post(
 )->name('cashier.webhook');
 
 // Shopify Webhook Route
-Route::post('/webhooks/shopify/products', [WebhookController::class, 'handleProductWebhook']);
+Route::prefix('webhooks/shopify')->group(function () {
+    Route::post('/products', [WebhookController::class, 'handleProductWebhook']);
+    Route::post('/orders', [WebhookController::class, 'handleOrderUpdate']);
+});
 
 // --- Public Routes (Authentication) ---
 Route::prefix('v1/auth')->group(function () {
@@ -196,6 +201,12 @@ Route::middleware('auth:sanctum', 'throttle:api')->prefix('v1')->group(function 
     //delete image from album
     Route::delete('mood-boards/images/{imageId}', [MoodBoardController::class, 'deleteImage']);
 
+
+    //product checkout
+    Route::post('/shop/checkout', [ShopController::class, 'initiateCheckout'])->name('api.v1.shop.checkout');
+    //order history
+    Route::get('/shop/orders', [OrderController::class, 'index'])->name('api.v1.shop.orders');
+    Route::get('/shop/orders/{order}', [OrderController::class, 'show'])->name('api.v1.shop.orders.details');
 
 
 

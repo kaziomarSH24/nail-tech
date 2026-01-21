@@ -6,6 +6,7 @@ use App\Models\Course;
 use App\Models\Lesson;
 use App\Models\MoodBoard;
 use App\Models\MoodBoardImage;
+use App\Models\Order;
 use App\Models\Product;
 use App\Models\UserAppointment;
 use App\Models\UserFinanceRecord;
@@ -15,6 +16,7 @@ use App\Observers\FinanceObserver;
 use App\Observers\LessonsObserver;
 use App\Observers\MoodBoardImageObserver;
 use App\Observers\MoodBoardObserver;
+use App\Observers\OrderObserver;
 use App\Observers\ProductObserver;
 use Illuminate\Foundation\Support\Providers\EventServiceProvider as ServiceProvider;
 
@@ -63,5 +65,6 @@ class EventServiceProvider extends ServiceProvider
         UserFinanceRecord::observe(FinanceObserver::class);
         MoodBoard::observe(MoodBoardObserver::class);
         MoodBoardImage::observe(MoodBoardImageObserver::class);
+        Order::observe(OrderObserver::class);
     }
 }

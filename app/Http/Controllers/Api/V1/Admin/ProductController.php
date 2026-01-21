@@ -21,11 +21,11 @@ class ProductController extends Controller
         $variants = $request->boolean('variants');
         $groupByCategory = $request->boolean('group_by_category');
         $qc = function ($query) use ($variants) {
-            $columns = ['id', 'shopify_product_id', 'title', 'category', 'price'];
+            $columns = ['id', 'shopify_product_id','shopify_variant_id', 'title', 'category', 'price','image_url','sku'];
             if ($variants) {
                 $columns[] = 'variants';
             }
-            $columns = array_merge($columns, ['stock_quantity', 'low_stock_threshold', 'last_synced_at', 'created_at', 'updated_at']);
+            $columns = array_merge($columns, ['stock_quantity', 'low_stock_threshold', 'last_synced_at','status', 'created_at', 'updated_at']);
             $query->select($columns);
         };
         $products = $this->shopifyService->getAll($qc);

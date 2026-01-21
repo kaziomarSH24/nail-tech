@@ -5,6 +5,7 @@ namespace App\Services\Admin;
 use App\Services\BaseService;
 use Spatie\QueryBuilder\AllowedFilter;
 use App\Filters\GlobalSearchFilter;
+use App\Models\Order;
 use App\Models\Product;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Http;
@@ -113,5 +114,68 @@ class ShopifyService extends BaseService
                 'last_synced_at' => Carbon::now(),
             ]
         );
+    }
+
+
+    public function syncOrderToShopify(Order $order)
+    {
+        $shippingData = $order->shipping_address ?? [];
+        $addressDetails = $shippingData['address'] ?? [];
+
+        Log::info($shippingData);
+        $shopifyAddress = [
+            'first_name' => $shippingData['first_name'] ?? 'Customer',
+            'last_name'  => $shippingData['last_name'] ?? '',
+            'phone'      => $shippingData['phone'] ?? '',
+            'address1'   => $addressDetails['address1'] ?? '',
+            'address2'   => $addressDetails['address2'] ?? '',
+            'city'       => $addressDetails['city'] ?? '', 
+            'zip'        => $addressDetails['zip'] ?? '',
+            'country'    => $addressDetails['country'] ?? 'United Kingdom',
+            'province'   => $addressDetails['province'] ?? '',
+        ];
+
+        Log::info("address (Fixed):", $shopifyAddress);
+        Log::info("=================Test Order Sync to Shopify33333=================");
+        $lineItems = collect($order->items)->map(function ($item) {
+            return [
+                'variant_id' => $item['variant_id'],
+                'quantity' => $item['quantity']
+            ];
+        })->toArray();
+
+
+        $payload = [
+            'order' => [
+                'email' => $shippingData['email'] ?? $order->user->email ?? 'customer@example.com',
+                'financial_status' => 'paid',
+                'line_items' => $lineItems,
+                'shipping_address' => $shopifyAddress,
+                'billing_address' => $shopifyAddress,
+                'note' => "App Order ID: #{$order->id}",
+                'tags' => 'App Purchase'
+            ]
+        ];
+
+        // ৩. API Call
+        $response = Http::withHeaders([
+            'X-Shopify-Access-Token' => $this->accessToken,
+            'Content-Type' => 'application/json'
+        ])->post("{$this->baseUrl}/orders.json", $payload);
+
+        if ($response->successful()) {
+            $shopifyData = $response->json();
+
+
+            $order->update([
+                'shopify_order_id' => $shopifyData['order']['id'],
+                'delivery_status' => 'unfulfilled'
+            ]);
+
+            return $shopifyData;
+        } else {
+            Log::error('Shopify Order Sync Failed', ['error' => $response->body()]);
+            return null;
+        }
     }
 }
