@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
 
 class Product extends Model
 {
@@ -16,7 +17,7 @@ class Product extends Model
         'variants' => 'array',
     ];
 
-    protected $appends = ['stock_status'];
+    protected $appends = ['stock_status', 'earnable_points'];
     /**
      * Scope to get only Low Stock products
      */
@@ -46,6 +47,14 @@ class Product extends Model
             return 'low_stock';
         }
         return 'in_stock';
+    }
+
+
+    public function getEarnablePointsAttribute()
+    {
+        $rate = (float) \App\Models\Setting::getValue('reward_points_per_usd', 100);
+        // dd($rate);
+        return (int) ($this->price * $rate);
     }
 
 }

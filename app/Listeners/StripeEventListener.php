@@ -166,7 +166,7 @@ class StripeEventListener implements ShouldQueue
                     ['user_id' => $userId, 'course_id' => $courseId],
                     ['progress_percent' => 0, 'completed' => false]
                 );
-
+                $reword = (new \App\Services\RewardService())->distributePoints($enrollment);
                 if ($enrollment->wasRecentlyCreated) {
                     Log::info("NEW Enrollment created for User {$userId} in Course {$courseId}");
                 } else {
@@ -197,6 +197,7 @@ class StripeEventListener implements ShouldQueue
             try {
                 $order->update(['status' => 'paid']);
                 $shopifyService = app(ShopifyService::class);
+                (new \App\Services\RewardService())->distributePoints($order);
                 $shopifyService->syncOrderToShopify($order);
 
                 \Log::info("Shopify Order Sync Successful for Local Order #{$order->id}");

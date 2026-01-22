@@ -66,7 +66,7 @@ class BaseObserver
 
             return app($serviceClass);
         }
-
+        Log::warning("Service class not found for model: {$modelClass}. Expected: {$serviceClass}");
         return null;
     }
 }
