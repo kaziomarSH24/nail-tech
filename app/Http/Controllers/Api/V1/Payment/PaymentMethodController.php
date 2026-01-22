@@ -61,35 +61,71 @@ class PaymentMethodController extends Controller
     /**
      * Display a list of the user's saved payment methods.
      */
+    // public function index(Request $request)
+    // {
+    //     $user = $request->user();
+    //     $paymentMethodsData = [];
+
+    //     if ($user->hasPaymentMethod()) {
+    //         //Get the default payment method once to avoid repeated queries in a loop.
+    //         $defaultPaymentMethod = $user->defaultPaymentMethod();
+
+    //         $paymentMethods = $user->paymentMethods();
+
+    //         if (empty($paymentMethods)) {
+    //             return response_success('No payment methods found.', []);
+    //         }
+
+    //         foreach ($paymentMethods as $method) {
+    //             $paymentMethodsData[] = [
+    //                 'id' => $method->id,
+    //                 'brand' => $method->card->brand,
+    //                 'last_four' => $method->card->last4,
+    //                 'exp_month' => $method->card->exp_month,
+    //                 'exp_year' => $method->card->exp_year,
+    //                 //Compare with the pre-fetched default payment method object.
+    //                 'is_default' => $defaultPaymentMethod && $defaultPaymentMethod->id === $method->id,
+    //             ];
+    //         }
+    //     }
+
+    //     return response_success('Payment methods fetched successfully.', $paymentMethodsData);
+    // }
+
     public function index(Request $request)
     {
         $user = $request->user();
         $paymentMethodsData = [];
+        if (!$user->stripe_id) {
+            return response_success('No payment methods found.', []);
+        }
 
-        if ($user->hasPaymentMethod()) {
-            //Get the default payment method once to avoid repeated queries in a loop.
-            $defaultPaymentMethod = $user->defaultPaymentMethod();
-
+        try {
             $paymentMethods = $user->paymentMethods();
-
-            if (empty($paymentMethods)) {
+            if ($paymentMethods->isEmpty()) {
                 return response_success('No payment methods found.', []);
             }
+            $defaultPaymentMethod = $user->defaultPaymentMethod();
 
             foreach ($paymentMethods as $method) {
                 $paymentMethodsData[] = [
                     'id' => $method->id,
-                    'brand' => $method->card->brand,
-                    'last_four' => $method->card->last4,
-                    'exp_month' => $method->card->exp_month,
-                    'exp_year' => $method->card->exp_year,
-                    //Compare with the pre-fetched default payment method object.
+
+                    'brand' => $method->card->brand ?? $method->type,
+                    'last_four' => $method->card->last4 ?? '****',
+                    'exp_month' => $method->card->exp_month ?? null,
+                    'exp_year' => $method->card->exp_year ?? null,
+
                     'is_default' => $defaultPaymentMethod && $defaultPaymentMethod->id === $method->id,
                 ];
             }
-        }
 
-        return response_success('Payment methods fetched successfully.', $paymentMethodsData);
+            return response_success('Payment methods fetched successfully.', $paymentMethodsData);
+        } catch (\Exception $e) {
+
+            \Log::error('Stripe Payment Method Fetch Error: ' . $e->getMessage());
+            return response_error('Unable to fetch payment methods.', [], 500);
+        }
     }
 
     /**

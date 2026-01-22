@@ -205,4 +205,36 @@ class StripeEventListener implements ShouldQueue
             }
         }
     }
+
+
+    protected function handleSetupIntentSucceeded($eventPayload)
+    {
+        try {
+            Log::info("Full Event Payload:", $eventPayload);
+            $setupIntent = $eventPayload['data']['object'];
+            $stripeCustomerId = $setupIntent['customer'];
+            $paymentMethodId = $setupIntent['payment_method'];
+            $user = \App\Models\User::where('stripe_id', $stripeCustomerId)->first();
+
+            if ($user && $paymentMethodId) {
+
+                $stripe = new \Stripe\StripeClient(env('STRIPE_SECRET'));
+                $paymentMethod = $stripe->paymentMethods->retrieve($paymentMethodId);
+
+
+                $stripe->customers->update($stripeCustomerId, [
+                    'invoice_settings' => ['default_payment_method' => $paymentMethodId]
+                ]);
+
+                $user->update([
+                    'pm_type' => $paymentMethod->card->brand,
+                    'pm_last_four' => $paymentMethod->card->last4,
+                ]);
+
+                Log::info("Payment Method updated for User ID: {$user->id}");
+            }
+        } catch (\Exception $e) {
+            Log::error("Setup Intent Webhook Error: " . $e->getMessage());
+        }
+    }
 }
