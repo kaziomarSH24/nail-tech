@@ -13,11 +13,8 @@
         <h2 class="text-2xl font-bold mb-6 text-gray-800">Chunk Video Upload Test (Blade)</h2>
 
         <!-- Token Input -->
-        <div class="mb-4">
-            <label class="block text-gray-700 text-sm font-bold mb-2">Admin Bearer Token:</label>
-            <input type="text" id="apiToken" placeholder="Paste your Bearer Token here" class="w-full p-2 border rounded" >
-            <p class="text-xs text-gray-500 mt-1">Login via Postman and copy the token here.</p>
-        </div>
+
+
 
         <!-- File Input -->
         <div class="mb-6">

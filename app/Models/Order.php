@@ -17,4 +17,14 @@ class Order extends Model
     {
         return $this->belongsTo(User::class);
     }
+
+    public function pointHistory()
+    {
+        return $this->morphOne(PointHistory::class, 'rewardable');
+    }
+
+    // public function items()
+    // {
+    //     return $this->hasMany(OrderItem::class); // Assuming you have this
+    // }
 }

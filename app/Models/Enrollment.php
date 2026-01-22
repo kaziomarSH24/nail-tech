@@ -25,4 +25,9 @@ class Enrollment extends Model
     {
         return $this->belongsTo(Course::class);
     }
+
+    public function pointHistory()
+    {
+        return $this->morphOne(PointHistory::class, 'rewardable');
+    }
 }
