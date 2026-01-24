@@ -48,20 +48,18 @@ class CourseService extends BaseService
     public function hasAccessToCourse($user, $courseId): bool
     {
         // Check if user has an active enrollment record
-        $hasEnrollment = Enrollment::where('user_id', $user->id)
+        $hasAccess = Enrollment::where('user_id', $user->id)
             ->where('course_id', $courseId)
+            ->where('status', 'active')
             ->exists();
 
-        if ($hasEnrollment) {
-            return true;
-        }
-        return false;
+        return $hasAccess;
     }
 
     // Define allowed sorts
     protected function getAllowedSorts(): array
     {
-         return ['id', 'price', 'created_at', 'title'];
+        return ['id', 'price', 'created_at', 'title'];
     }
 
 
@@ -85,7 +83,7 @@ class CourseService extends BaseService
     }
 
 
-        /**
+    /**
      * Get Popular Courses
      */
     public function getPopularCourses($limit = 5, $paginate = false)
@@ -119,5 +117,4 @@ class CourseService extends BaseService
 
         return $query->take($limit)->get();
     }
-
 }

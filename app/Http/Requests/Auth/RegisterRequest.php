@@ -18,6 +18,7 @@ class RegisterRequest extends BaseRequest
         return [
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
+            'dob' => 'required|date',
             'password' => 'required|string|min:8|confirmed',
             'fcm_token' => 'sometimes|string|nullable',
         ];

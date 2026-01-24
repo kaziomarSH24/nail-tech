@@ -10,17 +10,20 @@ use App\Services\CourseService;
 use App\Services\PaymentService;
 use Illuminate\Http\Request;
 use App\Models\LessonProgress;
+use App\Services\RewardService;
 
 class CourseController extends Controller
 {
     protected CourseService $courseService;
     protected PaymentService $paymentService; // Property
+    protected RewardService $rewardService; // Property
 
     // Inject PaymentService
-    public function __construct(CourseService $courseService, PaymentService $paymentService)
+    public function __construct(CourseService $courseService, PaymentService $paymentService, RewardService $rewardService)
     {
         $this->courseService = $courseService;
         $this->paymentService = $paymentService;
+        $this->rewardService = $rewardService;
     }
 
 
@@ -147,6 +150,9 @@ class CourseController extends Controller
      */
     public function enroll(Request $request, $courseId)
     {
+        $request->validate([
+            'points_to_redeem' => 'sometimes|integer|min:0'
+        ]);
         $user = auth()->user();
         $course = Course::where('is_published', true)->findOrFail($courseId);
 
@@ -155,31 +161,91 @@ class CourseController extends Controller
             return response_error('You are already enrolled in this course.', [], 400);
         }
 
+        Enrollment::where('user_id', $user->id)
+            ->where('course_id', $courseId)
+            ->where('status', 'pending')
+            ->delete();
+
         //Handle Free Course
         if ($course->price <= 0) {
-            Enrollment::firstOrCreate(
-                ['user_id' => $user->id, 'course_id' => $course->id],
-                ['progress_percent' => 0, 'completed' => false]
-            );
+            Enrollment::create([
+                'user_id' => $user->id,
+                'course_id' => $course->id,
+                'progress_percent' => 0,
+                'completed' => false,
+                'status' => 'active',
+                'final_amount' => 0,
+            ]);
             return response_success('Enrolled successfully in free course.', [], 201);
         }
 
-        // Handle Paid Course
-        $amountInCents = (int) ($course->price * 100);
+
+        // Redemption Logic
+        $coursePrice = $course->price;
+        $pointsToRedeem = $request->points_to_redeem ?? 0;
+
+        $discountAmount = 0;
+        $finalAmount = $coursePrice;
+
+        if ($pointsToRedeem > 0) {
+            try {
+
+                $redemptionData = $this->rewardService->calculateRedemptionLogic(
+                    $user,
+                    $pointsToRedeem,
+                    $coursePrice
+                );
+
+                $discountAmount = $redemptionData['discount_amount'];
+                $pointsToRedeem = $redemptionData['points_used'];
+                $finalAmount = $redemptionData['new_total'];
+            } catch (\Exception $e) {
+                return response_error($e->getMessage(), [], 400);
+            }
+        }
+
+
+        // Create Pending Record)
+        $enrollment = Enrollment::create([
+            'user_id' => $user->id,
+            'course_id' => $course->id,
+            'course_price' => $coursePrice,
+
+            'redeemed_points' => $pointsToRedeem,
+            'discount_amount' => $discountAmount,
+            'final_amount' => $finalAmount,
+
+            'status' => 'pending',
+            'progress_percent' => 0,
+            'completed' => false
+        ]);
+        $amountInCents = (int) ($finalAmount * 100);
 
         $paymentResult = $this->paymentService->initializePayment(
             $user,
-            $course,
+            $enrollment,
             $amountInCents,
-            ['type' => 'course_purchase'] // Webhook will use this 'type'
+            [
+                'type' => 'course_purchase',
+                'enrollment_id' => $enrollment->id
+            ]
         );
 
         if (!$paymentResult['success']) {
+            $enrollment->delete();
             return response_error($paymentResult['message'] ?? 'Payment init failed.', [], 500);
         }
 
-        // Return Data to Frontend (App will use this to open Stripe Modal)
-        return response_success('Payment initialized.', $paymentResult);
+        return response_success('Payment initialized.', [
+            'enrollment_id' => $enrollment->id,
+            'payment_details' => $paymentResult,
+            'summary' => [
+                'original_price' => $coursePrice,
+                'discount' => $discountAmount,
+                'points_used' => $pointsToRedeem,
+                'final_payable' => $finalAmount
+            ]
+        ]);
     }
 
     /**

@@ -33,8 +33,10 @@ class OrderResource extends JsonResource
             'id' => $this->id,
             'order_number' => '#' . str_pad($this->id, 6, '0', STR_PAD_LEFT), // e.g., #000123
             'shopify_order_id' => $this->shopify_order_id,
-
+            'redeemed_points' => (int) $this->redeemed_points,
+            'discount_amount' => (float) $this->discount_amount,
             'total_amount' => (float) $this->total_amount,
+            'final_amount' => (float) $this->final_amount,
             'currency' => 'USD',
 
             // Statuses
@@ -44,9 +46,9 @@ class OrderResource extends JsonResource
             'status_color' => $statusColor,
             //traking info
             'tracking_info' => [
-                'company' => $this->tracking_company, 
-                'number' => $this->tracking_number,   
-                'url' => $this->tracking_url,         
+                'company' => $this->tracking_company,
+                'number' => $this->tracking_number,
+                'url' => $this->tracking_url,
             ],
 
             // Date Formatting
