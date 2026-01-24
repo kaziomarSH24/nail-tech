@@ -7,6 +7,7 @@ use App\Models\Order;
 use App\Models\Transaction;
 use App\Models\User;
 use App\Services\Admin\ShopifyService;
+use App\Services\RewardService;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Laravel\Cashier\Events\WebhookReceived;
 use Illuminate\Support\Facades\Log;
@@ -158,25 +159,54 @@ class StripeEventListener implements ShouldQueue
     private function enrollUserInCourse($metadata)
     {
         try {
+            $enrollmentId = $metadata['enrollment_id'] ?? null;
             $userId = $metadata['user_id'] ?? null;
             $courseId = $metadata['payable_id'] ?? null;
 
-            if ($userId && $courseId) {
-                $enrollment = Enrollment::firstOrCreate(
-                    ['user_id' => $userId, 'course_id' => $courseId],
-                    ['progress_percent' => 0, 'completed' => false]
-                );
-                $reword = (new \App\Services\RewardService())->distributePoints($enrollment);
-                if ($enrollment->wasRecentlyCreated) {
-                    Log::info("NEW Enrollment created for User {$userId} in Course {$courseId}");
+            $enrollment = null;
+
+            if ($enrollmentId) {
+                $enrollment = Enrollment::find($enrollmentId);
+            } elseif ($userId && $courseId) {
+                $enrollment = Enrollment::where('user_id', $userId)
+                    ->where('course_id', $courseId)
+                    ->first();
+            }
+
+            if ($enrollment) {
+                if ($enrollment->status === 'pending') {
+                    $enrollment->update(['status' => 'active']);
+
+                    $rewardService = app(RewardService::class);
+                    $rewardService->redeemPoints($enrollment);
+                    $rewardService->distributePoints($enrollment);
+
+                    Log::info("Enrollment Activated & Rewards Processed for ID: {$enrollment->id}");
                 } else {
-                    Log::info("User {$userId} was ALREADY enrolled in Course {$courseId}");
+                    Log::info("Enrollment was ALREADY active for ID: {$enrollment->id}");
                 }
             } else {
-                Log::warning("Enrollment skipped: Missing user_id or payable_id in metadata", $metadata);
+
+                if ($userId && $courseId) {
+                    $enrollment = Enrollment::create([
+                        'user_id' => $userId,
+                        'course_id' => $courseId,
+                        'status' => 'active',
+                        'progress_percent' => 0,
+                        'completed' => false,
+                        'final_amount' => 0,
+                        'redeemed_points' => 0,
+                        'discount_amount' => 0
+                    ]);
+                    (new RewardService())->distributePoints($enrollment);
+
+                    Log::warning("Created FRESH Enrollment (Fallback) for User {$userId}, Course {$courseId}");
+                } else {
+                    Log::error("Enrollment failed: Missing enrollment_id, user_id, or payable_id in metadata");
+                }
             }
         } catch (Throwable $e) {
-            Log::error('Failed to enroll user: ' . $e->getMessage());
+            Log::error('Failed to enroll user via webhook: ' . $e->getMessage());
         }
     }
 
@@ -197,7 +227,9 @@ class StripeEventListener implements ShouldQueue
             try {
                 $order->update(['status' => 'paid']);
                 $shopifyService = app(ShopifyService::class);
-                (new \App\Services\RewardService())->distributePoints($order);
+                $rewardService = app(RewardService::class);
+                $rewardService->redeemPoints($order);
+                $rewardService->distributePoints($order);
                 $shopifyService->syncOrderToShopify($order);
 
                 \Log::info("Shopify Order Sync Successful for Local Order #{$order->id}");

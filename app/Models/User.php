@@ -103,4 +103,9 @@ class User extends Authenticatable
     {
         return $this->hasMany(UserFinanceRecord::class);
     }
+
+    public function pointHistories()
+    {
+        return $this->hasMany(PointHistory::class);
+    }
 }

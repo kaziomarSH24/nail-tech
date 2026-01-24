@@ -24,7 +24,9 @@ use App\Http\Controllers\Api\V1\User\CourseController as UserCourseController;
 use App\Http\Controllers\Api\V1\User\FinanceController;
 use App\Http\Controllers\Api\V1\User\MoodBoardController;
 use App\Http\Controllers\Api\V1\User\OrderController;
+use App\Http\Controllers\Api\V1\User\RedemptionController;
 use App\Http\Controllers\Api\V1\User\ShopController;
+use App\Http\Controllers\Api\V1\User\UserRewardController;
 use Laravel\Cashier\Http\Controllers\WebhookController as ControllersWebhookController;
 
 Route::post(
@@ -207,6 +209,11 @@ Route::middleware('auth:sanctum', 'throttle:api')->prefix('v1')->group(function 
     //order history
     Route::get('/shop/orders', [OrderController::class, 'index'])->name('api.v1.shop.orders');
     Route::get('/shop/orders/{order}', [OrderController::class, 'show'])->name('api.v1.shop.orders.details');
+
+    //--- User Reward Routes ---
+    Route::get('/user/rewards',UserRewardController::class)->name('api.v1.user.rewards');
+    //Redeem points
+    Route::post('/user/rewards/redeem', [RedemptionController::class, 'calculateDiscount'])->name('api.v1.user.rewards.redeem');
 
 
 

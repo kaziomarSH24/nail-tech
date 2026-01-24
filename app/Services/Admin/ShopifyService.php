@@ -121,15 +121,13 @@ class ShopifyService extends BaseService
     {
         $shippingData = $order->shipping_address ?? [];
         $addressDetails = $shippingData['address'] ?? [];
-
-        Log::info($shippingData);
         $shopifyAddress = [
             'first_name' => $shippingData['first_name'] ?? 'Customer',
             'last_name'  => $shippingData['last_name'] ?? '',
             'phone'      => $shippingData['phone'] ?? '',
             'address1'   => $addressDetails['address1'] ?? '',
             'address2'   => $addressDetails['address2'] ?? '',
-            'city'       => $addressDetails['city'] ?? '', 
+            'city'       => $addressDetails['city'] ?? '',
             'zip'        => $addressDetails['zip'] ?? '',
             'country'    => $addressDetails['country'] ?? 'United Kingdom',
             'province'   => $addressDetails['province'] ?? '',
