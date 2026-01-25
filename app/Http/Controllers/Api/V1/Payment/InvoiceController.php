@@ -35,6 +35,7 @@ class InvoiceController extends Controller
                     'download_url' => route('api.v1.payment.invoices.download', $invoice->id),
                 ];
             });
+           
 
             return response_success('Invoices fetched successfully.', $invoices);
         } catch (Exception $e) {

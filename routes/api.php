@@ -1,7 +1,9 @@
 <?php
 
 use App\Http\Controllers\Api\V1\Admin\ProductController;
+use App\Http\Controllers\Api\V1\Admin\RewardSettingController;
 use App\Http\Controllers\Api\V1\Admin\StockController;
+use App\Http\Controllers\Api\V1\Admin\UserManagementController;
 use App\Http\Controllers\Api\V1\Admin\WebhookController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\V1\Auth\AuthController;
@@ -172,6 +174,14 @@ Route::middleware('auth:sanctum', 'throttle:api')->prefix('v1')->group(function 
         Route::post('/courses/{id}/lessons', [CourseController::class, 'addLesson']);
         Route::put('/courses/{courseId}/lessons/{lessonId}', [CourseController::class, 'updateLesson']);
         Route::delete('/courses/{courseId}/lessons/{lessonId}', [CourseController::class, 'deleteLesson']);
+
+        //user management
+        Route::get('/users', [UserManagementController::class, 'index']);
+        Route::get('/users/{id}', [UserManagementController::class, 'show']);
+
+        // Reward Settings
+        Route::get('/reward-settings', [RewardSettingController::class, 'index']);
+        Route::post('/reward-settings', [RewardSettingController::class, 'update']);
     });
 
     //Users Course Routes
