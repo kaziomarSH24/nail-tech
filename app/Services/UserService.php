@@ -32,9 +32,7 @@ class UserService extends BaseService
     protected function getAllowedFilters(): array
     {
         return [
-            AllowedFilter::custom('search', new GlobalSearchFilter, 'first_name,last_name,email'),
-            'first_name',
-            'email',
+            'name',
             AllowedFilter::exact('status'),
         ];
     }
@@ -46,8 +44,6 @@ class UserService extends BaseService
     protected function getAllowedSorts(): array
     {
         return [
-            'id',
-            'first_name',
             'created_at',
         ];
     }
