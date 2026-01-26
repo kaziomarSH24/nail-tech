@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\V1\Admin\IncomeReportController;
 use App\Http\Controllers\Api\V1\Admin\ProductController;
 use App\Http\Controllers\Api\V1\Admin\RewardSettingController;
 use App\Http\Controllers\Api\V1\Admin\StockController;
@@ -178,6 +179,11 @@ Route::middleware('auth:sanctum', 'throttle:api')->prefix('v1')->group(function 
         //user management
         Route::get('/users', [UserManagementController::class, 'index']);
         Route::get('/users/{id}', [UserManagementController::class, 'show']);
+
+        //income report
+        Route::get('/income-report', [IncomeReportController::class, 'index']);
+        Route::get('/income-report/{id}', [IncomeReportController::class, 'show']);
+        Route::get('/income/generate-report', [IncomeReportController::class, 'generateReport']);
 
         // Reward Settings
         Route::get('/reward-settings', [RewardSettingController::class, 'index']);
