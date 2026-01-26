@@ -18,9 +18,8 @@ class UpdateProfileRequest extends BaseRequest
             'email' => 'sometimes|email|unique:users,email,' . $this->user()->id,
             'phone' => 'sometimes|string|max:20|unique:users,phone,' . $this->user()->id,
             'dob' => 'sometimes|date',
-            'address' => 'sometimes|string|max:500',
+            'address' => 'nullable|string|max:500',
             'avatar' => 'sometimes|image|max:5120', // max 5MB
         ];
     }
 }
-
