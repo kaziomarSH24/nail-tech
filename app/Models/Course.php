@@ -21,7 +21,7 @@ class Course extends Model
     }
     public function lessons()
     {
-        return $this->hasMany(Lesson::class)->orderBy('created_at', 'desc');
+        return $this->hasMany(Lesson::class)->orderBy('created_at', 'asc');
     }
 
     //relationship with Enrollment
@@ -30,5 +30,14 @@ class Course extends Model
         return $this->hasMany(Enrollment::class);
     }
 
-    
+
+    public function scopeWithEnrollmentStatus($query)
+    {
+        $userId = auth('sanctum')->id();
+        return $query->when($userId, function ($q) use ($userId) {
+            $q->withExists(['enrollments as is_enrolled' => function ($subQuery) use ($userId) {
+                $subQuery->where('user_id', $userId);
+            }]);
+        });
+    }
 }
