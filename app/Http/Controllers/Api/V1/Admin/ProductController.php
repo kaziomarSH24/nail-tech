@@ -28,7 +28,7 @@ class ProductController extends Controller
                 $columns[] = 'variants';
             }
             $columns = array_merge($columns, ['stock_quantity', 'low_stock_threshold', 'last_synced_at', 'status', 'created_at', 'updated_at']);
-            if($categoryName){
+            if ($categoryName) {
                 $query->where('category', $categoryName);
             }
             $query->select($columns);
@@ -73,13 +73,18 @@ class ProductController extends Controller
     public function show($id)
     {
         $product = $this->shopifyService->getById($id);
+
         if (!$product) {
             return response_error('Product not found', [], 404);
         }
+
+        $relatedProducts = $this->shopifyService->getRelatedProducts($product);
+
         return response()->json([
             'ok' => true,
             'message' => 'Product retrieved successfully',
-            'data' => new ProductResource($product)
+            'data' => new ProductResource($product),
+            'related_products' => ProductResource::collection($relatedProducts)
         ]);
     }
 
@@ -88,7 +93,7 @@ class ProductController extends Controller
     public function getCategories()
     {
         $categories = Product::select('category')->distinct()->pluck('category')->filter()->values();
-        if($categories->contains('Uncategorized')){
+        if ($categories->contains('Uncategorized')) {
             $categories = $categories->filter(function ($value) {
                 return $value !== 'Uncategorized';
             })->values();

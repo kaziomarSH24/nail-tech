@@ -176,4 +176,28 @@ class ShopifyService extends BaseService
             return null;
         }
     }
+
+    public function getRelatedProducts($product, $limit = 3)
+    {
+        $related = Product::where('category', $product->category)
+            ->where('id', '!=', $product->id)
+            ->inRandomOrder()
+            ->take($limit)
+            ->get();
+
+        if ($related->count() < $limit) {
+
+            $needed = $limit - $related->count();
+
+            $fallback = Product::where('id', '!=', $product->id)
+                ->whereNotIn('id', $related->pluck('id'))
+                ->inRandomOrder()
+                ->take($needed)
+                ->get();
+
+            $related = $related->merge($fallback);
+        }
+
+        return $related;
+    }
 }
