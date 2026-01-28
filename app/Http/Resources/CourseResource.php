@@ -23,7 +23,7 @@ class CourseResource extends JsonResource
             'price' => $this->price,
             'reward_points' => $this->reward_points,
             'is_published' => $this->is_published,
-            'is_enrolled' => (bool) ($this->is_enrolled ?? false),
+            'is_enrolled' => (bool) ($this->is_enrolled),
             'duration' => $this->duration,
             'actual_duration' => $this->formatDuration(),
             'created_at' => $this->created_at,

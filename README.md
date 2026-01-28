@@ -1,5 +1,4 @@
-<<<<<<< HEAD
-<<<<<<< HEAD
+
 <h1 align="center">🚀 Laravel 12 Boilerplate</h1>
 <p align="center">
 Production-ready Laravel backend with Authentication, Roles & Permissions, Activity Log, Real-time Chat (Reverb), Stripe Billing, Queues, Scheduler, Redis, Firebase FCM, and Clean Architecture.

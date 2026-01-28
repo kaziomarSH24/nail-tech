@@ -128,8 +128,7 @@ class CourseController extends Controller
      */
     public function index()
     {
-        $courses = Course::withEnrollmentStatus()
-            ->where('is_published', true)
+        $courses = Course::where('is_published', true)
             ->withSum('lessons', 'duration')
             ->latest()
             ->paginate(10);
@@ -151,8 +150,7 @@ class CourseController extends Controller
         }
 
         $user = auth('sanctum')->user();
-        $course = Course::withEnrollmentStatus()
-            ->withSum('lessons', 'duration')
+        $course = Course::withSum('lessons', 'duration')
             ->where('is_published', true)
             ->findOrFail($id);
         if (!$this->courseService->hasAccessToCourse($user, $course->id)) {
@@ -170,7 +168,7 @@ class CourseController extends Controller
     public function showPublic($id)
     {
 
-        $course = Course::withEnrollmentStatus()->withSum('lessons', 'duration')->with(['lessons' => function ($q) {
+        $course = Course::withSum('lessons', 'duration')->with(['lessons' => function ($q) {
             $q->select('id', 'course_id', 'title', 'duration', 'is_free_preview')
                 ->orderBy('id', 'asc');
         }])
