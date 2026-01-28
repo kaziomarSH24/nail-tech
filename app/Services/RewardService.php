@@ -56,7 +56,7 @@ class RewardService extends BaseService
             $points = 0;
             $description = '';
             $user = $model->user;
-            $rate = (float) \App\Models\Setting::getValue('reward_points_per_usd', 100);;
+            $rate = (float) \App\Models\Setting::getValue('earn_points_per_usd', 100);;
             if ($model instanceof Order) {
                 $amount = $model->total_amount ?? 0;
                 $points = (int) ceil($amount * $rate);
@@ -111,7 +111,7 @@ class RewardService extends BaseService
                 $user->decrement('current_points', $pointsToRedeem);
                 $history = new PointHistory();
                 $history->user_id = $user->id;
-                $history->points = -($pointsToRedeem);
+                $history->points = - ($pointsToRedeem);
                 $history->type = 'redeem';
                 $history->description = "Redeemed for Order #{$order->id}";
                 $order->pointHistory()->save($history);

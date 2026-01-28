@@ -14,8 +14,8 @@ class RewardSettingController extends Controller
     {
 
         $settings = [
-            'redeem_points_per_usd' => (int) Setting::getValue('redeem_points_per_usd', 20),
-            'earn_points_per_usd'   => (int) Setting::getValue('earn_points_per_usd', 1),
+            'redeem_points_per_usd' => (float) Setting::getValue('redeem_points_per_usd', 20),
+            'earn_points_per_usd'   => (float) Setting::getValue('earn_points_per_usd', 1),
         ];
 
 
@@ -76,8 +76,8 @@ class RewardSettingController extends Controller
     public function update(Request $request)
     {
         $request->validate([
-            'redeem_points_per_usd' => 'required|integer|min:1',
-            'earn_points_per_usd' => 'required|integer|min:0',
+            'redeem_points_per_usd' => 'required|numeric|min:1',
+            'earn_points_per_usd' => 'required|numeric|min:0',
         ]);
 
 

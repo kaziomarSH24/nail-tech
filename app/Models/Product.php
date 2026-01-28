@@ -24,7 +24,7 @@ class Product extends Model
     public function scopeLowStock($query)
     {
         return $query->whereColumn('stock_quantity', '<=', 'low_stock_threshold')
-                     ->where('stock_quantity', '>', 0);
+            ->where('stock_quantity', '>', 0);
     }
 
     /**
@@ -52,9 +52,8 @@ class Product extends Model
 
     public function getEarnablePointsAttribute()
     {
-        $rate = (float) \App\Models\Setting::getValue('reward_points_per_usd', 100);
+        $rate = (float) \App\Models\Setting::getValue('earn_points_per_usd', 1000);
         // dd($rate);
         return (int) ($this->price * $rate);
     }
-
 }

@@ -22,7 +22,7 @@ return new class extends Migration
 
 
         DB::table('settings')->insert([
-            ['key' => 'reward_points_per_usd', 'value' => '10', 'created_at' => now(), 'updated_at' => now()],
+            ['key' => 'earn_points_per_usd', 'value' => '10', 'created_at' => now(), 'updated_at' => now()],
             ['key' => 'redeem_points_per_usd', 'value' => '100', 'created_at' => now(), 'updated_at' => now()],
         ]);
 
