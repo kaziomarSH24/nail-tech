@@ -89,6 +89,7 @@ class CourseService extends BaseService
     public function getPopularCourses($limit = 5, $paginate = false)
     {
         $query = Course::where('is_published', true)
+            ->withSum('lessons', 'duration')
             ->withCount('enrollments')
             ->orderBy('enrollments_count', 'desc');
 
@@ -105,6 +106,7 @@ class CourseService extends BaseService
     public function getTrendingCourses($limit = 5, $paginate = false)
     {
         $query = Course::where('is_published', true)
+            ->withSum('lessons', 'duration')
             ->withCount(['enrollments' => function ($q) {
                 // count only enrollments in last 30 days
                 $q->where('created_at', '>=', now()->subDays(30));

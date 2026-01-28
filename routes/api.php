@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\V1\Admin\IncomeReportController;
 use App\Http\Controllers\Api\V1\Admin\ProductController;
 use App\Http\Controllers\Api\V1\Admin\RewardSettingController;
+use App\Http\Controllers\Api\V1\Admin\SettingController;
 use App\Http\Controllers\Api\V1\Admin\StockController;
 use App\Http\Controllers\Api\V1\Admin\UserManagementController;
 use App\Http\Controllers\Api\V1\Admin\WebhookController;
@@ -159,6 +160,9 @@ Route::middleware('auth:sanctum', 'throttle:api')->prefix('v1')->group(function 
 
     Route::middleware(['role:admin|super_admin'])->prefix('admin')->group(function () {
         Route::get('/products', [ProductController::class, 'index'])->withoutMiddleware('role:admin|super_admin'); // Get List
+        Route::get('/products/{id}', [ProductController::class, 'show'])->withoutMiddleware('role:admin|super_admin'); // Get Details
+        Route::get('/product/category', [ProductController::class, 'getByCategory'])->withoutMiddleware('role:admin|super_admin'); // Get by Category
+        Route::get('/product/categories', [ProductController::class, 'getCategories'])->withoutMiddleware('role:admin|super_admin'); // Get Categories
         Route::post('/products/sync', [ProductController::class, 'sync']); // Manual Sync Button
 
         Route::get('/stocks/overview', [StockController::class, 'index']);
@@ -188,11 +192,23 @@ Route::middleware('auth:sanctum', 'throttle:api')->prefix('v1')->group(function 
         // Reward Settings
         Route::get('/reward-settings', [RewardSettingController::class, 'index']);
         Route::post('/reward-settings', [RewardSettingController::class, 'update']);
+
+        //Settings Routes
+        Route::prefix('settings')->name('api.v1.admin.settings.')->group(function () {
+            // Terms Routes
+            Route::get('/terms', [SettingController::class, 'getTerms']);
+            Route::post('/terms', [SettingController::class, 'updateTerms']);
+
+            // Contact Info Routes
+            Route::get('/contact-info', [SettingController::class, 'getContactInfo']);
+            Route::post('/contact-info', [SettingController::class, 'updateContactInfo']);
+        });
     });
 
     //Users Course Routes
     Route::get('/courses', [UserCourseController::class, 'index']);
     Route::get('/courses/{id}', [UserCourseController::class, 'show']);
+    Route::get('/courses/{id}/preview', [UserCourseController::class, 'showPublic']);
     Route::post('/courses/{courseId}/enroll', [UserCourseController::class, 'enroll']);
     Route::post('/courses/{courseId}/lessons/{lessonId}/complete', [UserCourseController::class, 'completeLesson']);
     Route::get('/course/enrolled', [UserCourseController::class, 'getEnrolledCourses']);
@@ -202,7 +218,7 @@ Route::middleware('auth:sanctum', 'throttle:api')->prefix('v1')->group(function 
     // --- See All Routes (With Pagination) ---
     Route::get('/course/popular', [UserCourseController::class, 'getPopularCourses']);
     Route::get('/course/trending', [UserCourseController::class, 'getTrendingCourses']);
-
+    Route::get('/all/courses', [UserCourseController::class, 'getCourses']);
     //**Appointment Routes */
     Route::apiResource('appointments', AppointmentControll::class)->except(['create', 'edit']);
     //**Finance Records Routes (income tracker) */
@@ -227,7 +243,7 @@ Route::middleware('auth:sanctum', 'throttle:api')->prefix('v1')->group(function 
     Route::get('/shop/orders/{order}', [OrderController::class, 'show'])->name('api.v1.shop.orders.details');
 
     //--- User Reward Routes ---
-    Route::get('/user/rewards',UserRewardController::class)->name('api.v1.user.rewards');
+    Route::get('/user/rewards', UserRewardController::class)->name('api.v1.user.rewards');
     //Redeem points
     Route::post('/user/rewards/redeem', [RedemptionController::class, 'calculateDiscount'])->name('api.v1.user.rewards.redeem');
 

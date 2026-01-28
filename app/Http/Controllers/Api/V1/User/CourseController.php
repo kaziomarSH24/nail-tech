@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\CourseResource;
 use App\Models\Course;
 use App\Models\Enrollment;
+use App\Models\Lesson;
 use App\Services\CourseService;
 use App\Services\PaymentService;
 use Illuminate\Http\Request;
@@ -75,6 +76,14 @@ class CourseController extends Controller
         $user = auth()->user();
         $course = Course::findOrFail($courseId);
 
+        $lesson = Lesson::where('id', $lessonId)
+            ->where('course_id', $courseId)
+            ->first();
+
+        if (!$lesson) {
+            return response_error('Invalid lesson or course ID.', [], 404);
+        }
+
         // Mark lesson as complete using Model
         LessonProgress::updateOrInsert(
             [
@@ -119,7 +128,11 @@ class CourseController extends Controller
      */
     public function index()
     {
-        $courses = Course::where('is_published', true)->latest()->paginate(10);
+        $courses = Course::where('is_published', true)
+            ->withSum('lessons', 'duration')
+            ->latest()
+            ->paginate(10);
+
         return CourseResource::collection($courses)->additional([
             'ok' => true,
             'message' => 'Courses retrieved successfully.'
@@ -131,18 +144,45 @@ class CourseController extends Controller
      */
     public function show($id)
     {
-        $course = Course::with(['lessons' => function ($q) {
-            $q->where('is_free_preview', true);
-        }])->where('is_published', true)->findOrFail($id);
 
-        if (auth('sanctum')->check()) {
-            $user = auth('sanctum')->user();
-            if ($this->courseService->hasAccessToCourse($user, $course->id)) {
-                $course->load('lessons');
-            }
+        if (!auth('sanctum')->check()) {
+            return response()->json(['ok' => false, 'message' => 'Please login to view this course.'], 401);
         }
 
+        $user = auth('sanctum')->user();
+        $course = Course::withSum('lessons', 'duration')
+            ->where('is_published', true)
+            ->findOrFail($id);
+        if (!$this->courseService->hasAccessToCourse($user, $course->id)) {
+            return response()->json([
+                'ok' => false,
+                'message' => 'You must enroll in this course to view details.'
+            ], 403); // 403 Forbidden
+        }
+        $course->load('lessons');
+        $course->loadSum('lessons', 'duration');
+
         return response_success('Course details fetched.', new CourseResource($course));
+    }
+
+    public function showPublic($id)
+    {
+
+        $course = Course::withSum('lessons', 'duration')->with(['lessons' => function ($q) {
+            $q->select('id', 'course_id', 'title', 'duration', 'is_free_preview')
+                ->orderBy('id', 'asc');
+        }])
+            ->where('is_published', true)
+            ->findOrFail($id);
+        $course->lessons->transform(function ($lesson) {
+            $lesson->is_locked = !$lesson->is_free_preview;
+            $lesson->video_url = null;
+            $lesson->content = null;
+
+            return $lesson;
+        });
+
+        return response_success('Course preview details fetched.', new CourseResource($course));
     }
 
     /**
@@ -312,6 +352,103 @@ class CourseController extends Controller
         return CourseResource::collection($courses)->additional([
             'ok' => true,
             'message' => 'Trending courses retrieved successfully.'
+        ]);
+    }
+
+    public function getCourses(Request $request)
+    {
+        $request->validate([
+            'type' => 'required|in:enrolled,popular,trending',
+        ]);
+
+        $user = auth()->user();
+        $limit = $request->input('per_page', 10);
+        $search = $request->input('search');
+        $type = $request->type;
+
+        $data = [];
+        $pagination = [];
+        switch ($type) {
+            case 'enrolled':
+                $query = Enrollment::with(['course.lessons' => function ($q) {
+                    $q->select('id', 'course_id', 'title', 'duration', 'is_free_preview');
+                }])
+                    ->where('user_id', $user->id);
+                if (!empty($search)) {
+                    $query->whereHas('course', function ($q) use ($search) {
+                        $q->where('title', 'LIKE', "%{$search}%");
+                    });
+                }
+
+                $enrollments = $query->latest()->paginate($limit);
+                $courses = $enrollments->getCollection()->map(function ($enrollment) {
+                    $course = $enrollment->course;
+                    if ($course) {
+                        $course->progress_percent = $enrollment->progress_percent;
+                        $course->is_completed = $enrollment->completed;
+                        $course->enrolled_at = $enrollment->created_at;
+                    }
+                    return $course;
+                })->filter();
+                $data = CourseResource::collection($courses);
+                $pagination = [
+                    'total' => $enrollments->total(),
+                    'per_page' => $enrollments->perPage(),
+                    'current_page' => $enrollments->currentPage(),
+                    'last_page' => $enrollments->lastPage(),
+                ];
+                break;
+
+            case 'popular':
+                // --- POPULAR COURSES ---
+                $query = Course::where('is_published', true)
+                    ->withCount('enrollments')
+                    ->orderBy('enrollments_count', 'desc');
+
+                if (!empty($search)) {
+                    $query->where('title', 'LIKE', "%{$search}%");
+                }
+
+                $popularCourses = $query->paginate($limit);
+
+                $data = CourseResource::collection($popularCourses);
+                $pagination = [
+                    'total' => $popularCourses->total(),
+                    'per_page' => $popularCourses->perPage(),
+                    'current_page' => $popularCourses->currentPage(),
+                    'last_page' => $popularCourses->lastPage(),
+                ];
+                break;
+
+            case 'trending':
+                // --- TRENDING COURSES ---
+                $query = Course::where('is_published', true)
+                    ->withCount(['enrollments' => function ($q) {
+                        // count only enrollments in last 30 days
+                        $q->where('created_at', '>=', now()->subDays(30));
+                    }])
+                    ->orderBy('enrollments_count', 'desc');
+
+                if (!empty($search)) {
+                    $query->where('title', 'LIKE', "%{$search}%");
+                }
+
+                $trendingCourses = $query->paginate($limit);
+
+                $data = CourseResource::collection($trendingCourses);
+                $pagination = [
+                    'total' => $trendingCourses->total(),
+                    'per_page' => $trendingCourses->perPage(),
+                    'current_page' => $trendingCourses->currentPage(),
+                    'last_page' => $trendingCourses->lastPage(),
+                ];
+                break;
+        }
+        return response()->json([
+            'ok' => true,
+            'message' => ucfirst($type) . ' courses retrieved successfully.',
+            'data' => $data,
+            'pagination' => $pagination,
         ]);
     }
 }
