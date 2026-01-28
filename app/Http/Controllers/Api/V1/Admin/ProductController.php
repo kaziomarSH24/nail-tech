@@ -53,10 +53,13 @@ class ProductController extends Controller
                 'ok' => true,
                 'message' => 'Products retrieved and grouped successfully',
                 'data' => $groupedProducts,
-                'meta' => [
+                'pagination' => [
                     'current_page' => $products->currentPage(),
                     'total' => $products->total(),
                     'per_page' => $products->perPage(),
+                    'last_page' => $products->lastPage(),
+                    'from' => $products->firstItem(),
+                    'to' => $products->lastItem(),
                 ]
             ]);
         }

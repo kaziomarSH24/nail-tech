@@ -161,7 +161,6 @@ Route::middleware('auth:sanctum', 'throttle:api')->prefix('v1')->group(function 
     Route::middleware(['role:admin|super_admin'])->prefix('admin')->group(function () {
         Route::get('/products', [ProductController::class, 'index'])->withoutMiddleware('role:admin|super_admin'); // Get List
         Route::get('/products/{id}', [ProductController::class, 'show'])->withoutMiddleware('role:admin|super_admin'); // Get Details
-        Route::get('/product/category', [ProductController::class, 'getByCategory'])->withoutMiddleware('role:admin|super_admin'); // Get by Category
         Route::get('/product/categories', [ProductController::class, 'getCategories'])->withoutMiddleware('role:admin|super_admin'); // Get Categories
         Route::post('/products/sync', [ProductController::class, 'sync']); // Manual Sync Button
 
@@ -202,6 +201,7 @@ Route::middleware('auth:sanctum', 'throttle:api')->prefix('v1')->group(function 
             // Contact Info Routes
             Route::get('/contact-info', [SettingController::class, 'getContactInfo']);
             Route::post('/contact-info', [SettingController::class, 'updateContactInfo']);
+            Route::delete('/contact-info', [SettingController::class, 'deleteContactInfo']);
         });
     });
 

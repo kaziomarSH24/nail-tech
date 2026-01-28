@@ -50,24 +50,32 @@ class SettingController extends Controller
             'social_links.*.url' => 'required|url',
         ]);
 
-        $oldLinks = Setting::where('key', 'contact_info')->value('value');
-        $oldLinks = $oldLinks ? json_decode($oldLinks, true) : [];
 
-        $processedLinks = [];
+        $existingSettings = Setting::where('key', 'contact_info')->value('value');
+        $existingLinks = $existingSettings ? json_decode($existingSettings, true) : [];
 
-        foreach ($request->social_links as $index => $link) {
+        $linksMap = [];
+        foreach ($existingLinks as $link) {
+            if (isset($link['platform'])) {
+                $linksMap[strtolower($link['platform'])] = $link;
+            }
+        }
+        foreach ($request->social_links as $index => $newLink) {
+
+            $platformKey = strtolower($newLink['platform']);
+
 
             if ($request->hasFile("social_links.$index.icon")) {
 
                 if (
-                    isset($oldLinks[$index]['icon']) &&
-                    is_string($oldLinks[$index]['icon']) &&
-                    !empty($oldLinks[$index]['icon'])
+                    isset($linksMap[$platformKey]['icon']) &&
+                    is_string($linksMap[$platformKey]['icon']) &&
+                    !empty($linksMap[$platformKey]['icon'])
                 ) {
-                    $this->deleteFile($oldLinks[$index]['icon']);
+                    $this->deleteFile($linksMap[$platformKey]['icon']);
                 }
 
-                $link['icon'] = $this->handleFileUpload(
+                $newLink['icon'] = $this->handleFileUpload(
                     $request,
                     "social_links.$index.icon",
                     'social_icons',
@@ -77,17 +85,71 @@ class SettingController extends Controller
                     true
                 );
             } else {
-                $link['icon'] = is_string($link['icon']) ? $link['icon'] : '';
+
+                if (isset($linksMap[$platformKey])) {
+                    $newLink['icon'] = $linksMap[$platformKey]['icon'];
+                } else {
+                    $newLink['icon'] = is_string($newLink['icon']) ? $newLink['icon'] : '';
+                }
             }
 
-            $processedLinks[] = $link;
+            $linksMap[$platformKey] = $newLink;
+        }
+
+        $finalLinks = array_values($linksMap);
+
+        Setting::updateOrCreate(
+            ['key' => 'contact_info'],
+            ['value' => json_encode($finalLinks)]
+        );
+
+        return response_success('Contact info updated/added successfully.');
+    }
+
+    public function deleteContactInfo(Request $request)
+    {
+        $request->validate([
+            'platform' => 'required|string',
+        ]);
+
+        $platformToDelete = strtolower($request->platform);
+
+        $existingSettings = Setting::where('key', 'contact_info')->value('value');
+        $existingLinks = $existingSettings ? json_decode($existingSettings, true) : [];
+
+        $finalLinks = [];
+        $isDeleted = false;
+
+        foreach ($existingLinks as $link) {
+
+            if (
+                isset($link['platform']) &&
+                strtolower($link['platform']) === $platformToDelete
+            ) {
+                if (
+                    isset($link['icon']) &&
+                    is_string($link['icon']) &&
+                    !empty($link['icon'])
+                ) {
+                    $this->deleteFile($link['icon']);
+                }
+
+                $isDeleted = true;
+                continue;
+            }
+
+            $finalLinks[] = $link;
+        }
+
+        if (!$isDeleted) {
+            return response_error('Platform not found.', [], 404);
         }
 
         Setting::updateOrCreate(
             ['key' => 'contact_info'],
-            ['value' => json_encode($processedLinks)]
+            ['value' => json_encode($finalLinks)]
         );
 
-        return response_success('Contact info updated successfully.');
+        return response_success('Contact info deleted successfully.');
     }
 }
