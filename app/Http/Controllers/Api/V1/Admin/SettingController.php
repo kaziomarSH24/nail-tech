@@ -36,8 +36,14 @@ class SettingController extends Controller
     public function getContactInfo()
     {
         $data = Setting::where('key', 'contact_info')->value('value');
-        $socialLinks = $data ? json_decode($data, true) : [];
+        //add image url to icon
 
+        $socialLinks = $data ? json_decode($data, true) : [];
+        foreach ($socialLinks as &$link) {
+            if (isset($link['icon']) && is_string($link['icon']) && !empty($link['icon'])) {
+                $link['icon'] = url('storage/' . $link['icon']);
+            }
+        }
         return response_success('Contact info fetched successfully.', $socialLinks);
     }
 
@@ -79,8 +85,8 @@ class SettingController extends Controller
                     $request,
                     "social_links.$index.icon",
                     'social_icons',
-                    64,
-                    64,
+                    null,
+                    null,
                     90,
                     true
                 );

@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\V1\Admin\FaqController;
 use App\Http\Controllers\Api\V1\Admin\IncomeReportController;
 use App\Http\Controllers\Api\V1\Admin\ProductController;
 use App\Http\Controllers\Api\V1\Admin\RewardSettingController;
@@ -202,6 +203,9 @@ Route::middleware('auth:sanctum', 'throttle:api')->prefix('v1')->group(function 
             Route::get('/contact-info', [SettingController::class, 'getContactInfo']);
             Route::post('/contact-info', [SettingController::class, 'updateContactInfo']);
             Route::delete('/contact-info', [SettingController::class, 'deleteContactInfo']);
+
+            // faq
+            Route::apiResource('faqs', FaqController::class);
         });
     });
 
