@@ -12,9 +12,9 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('orders', function (Blueprint $table) {
-            $table->integer('redeemed_points')->default(0)->after('total_amount');
+            $table->integer('redeemed_points')->default(0)->after('sub_total');
             $table->decimal('discount_amount', 10, 2)->default(0.00)->after('redeemed_points');
-            $table->decimal('final_amount', 10, 2)->default(0.00)->after('discount_amount');
+            $table->decimal('final_amount', 10, 2)->default(0.00)->after('tax_rate');
         });
     }
 

@@ -27,6 +27,9 @@ class ShopController extends Controller
     {
         $user = auth()->user();
 
+        $taxRate = (float) \App\Models\Setting::getValue('tax_percentage', 0);
+        $shippingCost = (float) \App\Models\Setting::getValue('shipping_cost', 0);
+
         $customerInfo = [
             'first_name' => $request->first_name,
             'last_name' => $request->last_name,
@@ -35,52 +38,41 @@ class ShopController extends Controller
             'address' => $request->shipping_address,
         ];
 
-        $totalAmount = 0;
+        $subTotal = 0;
         $processedItems = [];
-
 
         foreach ($request->items as $item) {
             $product = Product::where('shopify_variant_id', $item['variant_id'])->first();
 
-
             if (!$product) {
-                return response()->json(['message' => "Product not found (Variant ID: {$item['variant_id']})"], 404);
+                return response()->json(['message' => 'Product not found'], 404);
             }
-
 
             if ($product->stock_quantity < $item['quantity']) {
-                return response()->json([
-                    'ok' => false,
-                    'message' => "Out of stock: {$product->title}",
-                    'available_stock' => $product->stock_quantity
-                ], 400);
+                return response()->json(['message' => 'Out of stock'], 400);
             }
 
-            $totalAmount += $product->price * $item['quantity'];
+            $subTotal += $product->price * $item['quantity'];
 
             $processedItems[] = [
                 'variant_id' => $item['variant_id'],
                 'quantity' => $item['quantity'],
                 'title' => $product->title,
-                'product_id' => $product->id,
-                'shopify_product_id' => $product->shopify_product_id,
-                'image_url' => $product->image_url,
-                'price' => $product->price
+                'price' => $product->price,
             ];
         }
 
-        // --- Redemption Logic Start ---
         $discountAmount = 0;
         $pointsToRedeem = $request->points_to_redeem ?? 0;
 
         if ($pointsToRedeem > 0) {
             try {
-                // SAME FUNCTION CALL
                 $redemptionData = $this->rewardService->calculateRedemptionLogic(
                     $user,
                     $pointsToRedeem,
-                    $totalAmount
+                    $subTotal
                 );
+
                 $discountAmount = $redemptionData['discount_amount'];
                 $pointsToRedeem = $redemptionData['points_used'];
             } catch (\Exception $e) {
@@ -88,30 +80,31 @@ class ShopController extends Controller
             }
         }
 
-        $finalAmount = $totalAmount - $discountAmount;
-        // --- Redemption Logic End ---
-
+        $taxableAmount = max($subTotal - $discountAmount, 0);
+        $taxAmount = ($taxableAmount * $taxRate) / 100;
+        $finalAmount = $taxableAmount + $taxAmount + $shippingCost;
 
         $order = Order::create([
             'user_id' => $user->id,
             'status' => 'pending',
-            'delivery_status' => 'unfulfilled',
-            'total_amount' => $totalAmount,
+            'sub_total' => $subTotal,
             'discount_amount' => $discountAmount,
-            'redeemed_points' => $pointsToRedeem, 
+            'tax_rate' => $taxRate,
+            'tax_amount' => $taxAmount,
+            'shipping_cost' => $shippingCost,
             'final_amount' => $finalAmount,
+            'redeemed_points' => $pointsToRedeem,
             'items' => $processedItems,
             'shipping_address' => $customerInfo,
         ]);
 
-
         $paymentData = $this->paymentService->initializePayment(
             $user,
             $order,
-            (int) ($totalAmount * 100),
+            (int) ($finalAmount * 100),
             [
                 'order_id' => $order->id,
-                'type' => 'shopify_purchase'
+                'type' => 'shopify_purchase',
             ]
         );
 
@@ -122,13 +115,16 @@ class ShopController extends Controller
         return response_success('Checkout initialized.', [
             'order_id' => $order->id,
             'summary' => [
-                'subtotal' => (float) $totalAmount,
-                'discount_amount' => (float) $discountAmount,
+                'sub_total' => round($subTotal, 2),
+                'discount_amount' => round($discountAmount, 2),
+                'taxable_amount' => round($taxableAmount, 2),
+                'tax_rate' => $taxRate . '%',
+                'tax_amount' => round($taxAmount, 2),
+                'shipping_cost' => round($shippingCost, 2),
+                'total_payable' => round($finalAmount, 2),
                 'redeemed_points' => (int) $pointsToRedeem,
-                'total_payable' => (float) $finalAmount,
-                'message' => "Redeemed {$pointsToRedeem} points for $" . $discountAmount . " off!"
             ],
-            'payment_details' => $paymentData
+            'payment_details' => $paymentData,
         ]);
     }
 }

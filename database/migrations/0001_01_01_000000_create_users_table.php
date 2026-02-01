@@ -22,7 +22,7 @@ return new class extends Migration
             $table->date('dob')->nullable();
             $table->string('address')->nullable();
             $table->enum('status', ['active', 'inactive', 'suspended'])->default('active');
-            $table->integer('current_reward_points')->default(0);
+            // $table->integer('current_reward_points')->default(0);
             $table->string('otp')->nullable();
             $table->string('verification_token')->nullable();
             $table->timestamp('otp_expires_at')->nullable();

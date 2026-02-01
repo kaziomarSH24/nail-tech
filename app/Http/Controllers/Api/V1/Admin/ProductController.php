@@ -5,8 +5,10 @@ namespace App\Http\Controllers\Api\V1\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\ProductResource;
 use App\Models\Product;
+use App\Models\Setting;
 use App\Services\Admin\ShopifyService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class ProductController extends Controller
 {
@@ -78,12 +80,24 @@ class ProductController extends Controller
             return response_error('Product not found', [], 404);
         }
 
+        $taxRate = (float) Setting::getValue('tax_percentage', 0);
+        $shippingCost = (float) Setting::getValue('shipping_cost', 0);
+        $estimatedTax = ($product->price * $taxRate) / 100;
         $relatedProducts = $this->shopifyService->getRelatedProducts($product);
+
+        //user reward
+        $currentPoints = Auth::user() ? Auth::user()->current_points : 0;
 
         return response()->json([
             'ok' => true,
             'message' => 'Product retrieved successfully',
             'data' => new ProductResource($product),
+            'meta' => [
+                'current_user_reward_points' => $currentPoints,
+                'tax_rate_percentage' => $taxRate,
+                'estimated_tax_amount' => round($estimatedTax, 2),
+                'shipping_cost' => round($shippingCost, 2),
+            ],
             'related_products' => ProductResource::collection($relatedProducts)
         ]);
     }

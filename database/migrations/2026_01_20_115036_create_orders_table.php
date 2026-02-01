@@ -16,10 +16,13 @@ return new class extends Migration
             $table->foreignId('user_id')->constrained();
             $table->string('status')->default('pending'); // pending, paid, failed
             $table->string('payment_intent_id')->nullable();
-            $table->decimal('total_amount', 10, 2);
+            $table->decimal('sub_total', 8, 2)->default(0);
+            $table->decimal('shipping_cost', 8, 2)->default(0);
+            $table->decimal('tax_amount', 8, 2)->default(0);
+            $table->decimal('tax_rate', 5, 2)->default(0);
             $table->json('items'); // [{variant_id: 123, quantity: 1, price: 50}]
             $table->json('shipping_address');
-            $table->string('shopify_order_id')->nullable(); 
+            $table->string('shopify_order_id')->nullable();
 
             $table->timestamps();
         });

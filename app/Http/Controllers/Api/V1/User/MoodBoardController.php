@@ -31,7 +31,7 @@ class MoodBoardController extends Controller
         $qc = function ($query) {
             $query->where('user_id', auth()->id());
         };
-        $moodBoards = $this->moodBoardService->getAll($qc);
+        $moodBoards = $this->moodBoardService->getAll($qc, false);
         if ($moodBoards->isEmpty()) {
             return response_error('No mood boards found.', [], 404);
         }
@@ -149,6 +149,15 @@ class MoodBoardController extends Controller
         }
 
         return response_success('Images uploaded.', $uploadedFiles);
+    }
+
+
+    //get single image details
+    public function getImageDetails($imageId)
+    {
+        $image = MoodBoardImage::findOrFail($imageId);
+        $this->authorize('view', MoodBoard::find($image->mood_board_id));
+        return response_success('Image details fetched.', $image);
     }
 
     // delete image from album

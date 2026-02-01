@@ -158,4 +158,34 @@ class SettingController extends Controller
 
         return response_success('Contact info deleted successfully.');
     }
+
+    //update shipping cost
+    public function updateTaxAndShipping(Request $request)
+    {
+        $request->validate([
+            'shipping_cost' => 'sometimes|numeric|min:0',
+            'tax_percentage' => 'sometimes|numeric|min:0',
+        ]);
+
+        if ($request->has('shipping_cost')) {
+            Setting::setValue('shipping_cost', $request->shipping_cost);
+        }
+        if ($request->has('tax_percentage')) {
+            Setting::setValue('tax_percentage', $request->tax_percentage);
+        }
+        return response_success('Shipping cost updated successfully.', [
+            'shipping_cost' => (float) Setting::getValue('shipping_cost', 0),
+            'tax_percentage' => (float) Setting::getValue('tax_percentage', 0),
+        ]);
+    }
+    public function getTaxAndShipping()
+    {
+        $shippingCost = Setting::getValue('shipping_cost', 0);
+        $taxPercentage = Setting::getValue('tax_percentage', 0);
+
+        return response_success('Tax and shipping info fetched successfully.', [
+            'shipping_cost' => (float) $shippingCost,
+            'tax_percentage' => (float) $taxPercentage,
+        ]);
+    }
 }

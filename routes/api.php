@@ -203,6 +203,9 @@ Route::middleware('auth:sanctum', 'throttle:api')->prefix('v1')->group(function 
             Route::get('/contact-info', [SettingController::class, 'getContactInfo']);
             Route::post('/contact-info', [SettingController::class, 'updateContactInfo']);
             Route::delete('/contact-info', [SettingController::class, 'deleteContactInfo']);
+            //tex preference
+            Route::get('/tax-shipping', [SettingController::class, 'getTaxAndShipping']);
+            Route::post('/tax-shipping', [SettingController::class, 'updateTaxAndShipping']);
 
             // faq
             Route::apiResource('faqs', FaqController::class);
@@ -238,6 +241,8 @@ Route::middleware('auth:sanctum', 'throttle:api')->prefix('v1')->group(function 
     Route::post('mood-boards/images/upload', [MoodBoardController::class, 'uploadImage']);
     //delete image from album
     Route::delete('mood-boards/images/{imageId}', [MoodBoardController::class, 'deleteImage']);
+    //get single image details
+    Route::get('mood-boards/images/details/{imageId}', [MoodBoardController::class, 'getImageDetails']);
 
 
     //product checkout

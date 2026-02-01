@@ -41,7 +41,7 @@ abstract class BaseService
     protected Model $model;
 
 
-     /**
+    /**
      * This property controls whether caching is active for this service.
      * By default, caching is enabled for all services that extend BaseService.
      * To disable caching for a specific service, override this property
@@ -90,9 +90,9 @@ abstract class BaseService
      * @param Closure|null  $queryCallback   A closure to apply custom query
      * @return \Illuminate\Contracts\Pagination\LengthAwarePaginator
      */
- public function getAll(?Closure $queryCallback = null)
+    public function getAll(?Closure $queryCallback = null, bool $paginate = true)
     {
-        $callback = function () use ($queryCallback) {
+        $callback = function () use ($queryCallback, $paginate) {
             // First, a base Eloquent query builder is created.
             $baseQuery = $this->model->query();
 
@@ -101,12 +101,17 @@ abstract class BaseService
                 $queryCallback($baseQuery);
             }
             // Then, pass this (potentially modified) builder to Spatie QueryBuilder.
-            return QueryBuilder::for($baseQuery)
+            $builder = QueryBuilder::for($baseQuery)
                 ->allowedFilters($this->getAllowedFilters())
                 ->allowedIncludes($this->getAllowedIncludes())
-                ->allowedSorts($this->getAllowedSorts())
-                ->paginate(request()->input('per_page', 15))
-                ->appends(request()->query());
+                ->allowedSorts($this->getAllowedSorts());
+            if ($paginate) {
+                return $builder->paginate(request()->input('per_page', 15))
+                    ->appends(request()->query());
+            }
+
+            // Jodi pagination chara shob data lage
+            return $builder->get();
         };
         // func_get_args() returns all arguments as an array
         return $this->cache(__FUNCTION__, func_get_args(), $callback, $this->cacheTTL, $this->cachePerUser);
@@ -135,9 +140,9 @@ abstract class BaseService
      * @param array $with
      * @return \Illuminate\Database\Eloquent\Model
      */
-     public function findByOrFail(string $column, $value, array $with = [])
+    public function findByOrFail(string $column, $value, array $with = [])
     {
-       $callback = fn() => $this->model->with($with)->where($column, $value)->firstOrFail();
+        $callback = fn() => $this->model->with($with)->where($column, $value)->firstOrFail();
         return $this->cache(__FUNCTION__, func_get_args(), $callback, $this->cacheTTL, $this->cachePerUser);
     }
 
