@@ -53,7 +53,7 @@ class MoodBoardService extends BaseService
 
     public function getImagesByAlbum(MoodBoard $album)
     {
-        return $album->images()->latest()->get();
+        return $album->images()->latest()->paginate(request()->get('per_page', 10));
     }
 
     public function deleteImage($imageId)

@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Models\Course;
+use App\Models\Faq;
 use App\Models\Lesson;
 use App\Models\MoodBoard;
 use App\Models\MoodBoardImage;
@@ -71,5 +72,6 @@ class EventServiceProvider extends ServiceProvider
         Order::observe(OrderObserver::class);
         PointHistory::observe(PointHistoryObserver::class);
         Setting::observe(\App\Observers\SettingObserver::class);
+        Faq::observe(\App\Observers\FaqObserver::class);
     }
 }

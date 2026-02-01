@@ -15,8 +15,8 @@ class MoodBoardImageRequest extends BaseRequest
     {
         return [
             'mood_board_id' => 'required',
-            'title' => 'nullable|string|max:255',
-            'description' => 'nullable|string',
+            'title' => 'required|string|max:255',
+            'description' => 'required|string',
             'images' => 'required|array',
             'images.*' => 'image',
         ];

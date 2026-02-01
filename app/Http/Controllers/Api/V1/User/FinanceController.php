@@ -10,6 +10,8 @@ use App\Services\UserFinanceRecordService;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Spatie\QueryBuilder\AllowedFilter;
+use Spatie\QueryBuilder\QueryBuilder;
 
 class FinanceController extends Controller
 {
@@ -26,20 +28,49 @@ class FinanceController extends Controller
      */
     public function index()
     {
-        $financeRecords = $this->financeService->getAll(function ($query) {
-            $query->where('user_id', auth()->id());
-        });
-        if ($financeRecords->isEmpty()) {
-            return response()->json([
-                'ok' => false,
-                'message' => 'No finance records found.',
-            ], 404);
+        $userId = auth()->id();
+
+        $summaryQuery = UserFinanceRecord::where('user_id', $userId);
+
+        if (request()->filled('filter.date_between')) {
+            $summaryQuery->dateBetween(request()->input('filter.date_between'));
         }
+
+        $summaryStats = $summaryQuery
+            ->select('type', DB::raw('SUM(amount) as total'))
+            ->groupBy('type')
+            ->pluck('total', 'type');
+
+        $income = (float) ($summaryStats['income'] ?? 0);
+        $expense = (float) ($summaryStats['expense'] ?? 0);
+
+        $profitRaw = $income - $expense;
+        $profit = $profitRaw > 0 ? $profitRaw : 0;
+        $loss = $profitRaw < 0 ? abs($profitRaw) : 0;
+
+        $financeRecords = QueryBuilder::for(UserFinanceRecord::class)
+            ->where('user_id', $userId)
+            ->allowedFilters([
+                AllowedFilter::scope('date_between'),
+                'type',
+            ])
+            ->allowedSorts(['record_date', 'amount', 'created_at'])
+            ->defaultSort('-record_date')
+            ->paginate(request('per_page', 10));
+
         return Financeresource::collection($financeRecords)->additional([
             'ok' => true,
             'message' => 'Finance records retrieved successfully.',
+            'summary' => [
+                'total_income' => $income,
+                'total_expense' => $expense,
+                'profit' => $profit,
+                'loss' => $loss,
+                'balance' => $profitRaw,
+            ],
         ]);
     }
+
 
 
     /**
@@ -95,7 +126,7 @@ class FinanceController extends Controller
 
     public function getAnalytics(Request $request)
     {
-       $data = $this->financeService->getAnalytics();
-       return response_success('Analytics data.', $data);
+        $data = $this->financeService->getAnalytics();
+        return response_success('Analytics data.', $data);
     }
 }

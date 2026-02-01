@@ -36,8 +36,14 @@ class SettingController extends Controller
     public function getContactInfo()
     {
         $data = Setting::where('key', 'contact_info')->value('value');
-        $socialLinks = $data ? json_decode($data, true) : [];
+        //add image url to icon
 
+        $socialLinks = $data ? json_decode($data, true) : [];
+        foreach ($socialLinks as &$link) {
+            if (isset($link['icon']) && is_string($link['icon']) && !empty($link['icon'])) {
+                $link['icon'] = url('storage/' . $link['icon']);
+            }
+        }
         return response_success('Contact info fetched successfully.', $socialLinks);
     }
 
@@ -79,8 +85,8 @@ class SettingController extends Controller
                     $request,
                     "social_links.$index.icon",
                     'social_icons',
-                    64,
-                    64,
+                    null,
+                    null,
                     90,
                     true
                 );
@@ -151,5 +157,35 @@ class SettingController extends Controller
         );
 
         return response_success('Contact info deleted successfully.');
+    }
+
+    //update shipping cost
+    public function updateTaxAndShipping(Request $request)
+    {
+        $request->validate([
+            'shipping_cost' => 'sometimes|numeric|min:0',
+            'tax_percentage' => 'sometimes|numeric|min:0',
+        ]);
+
+        if ($request->has('shipping_cost')) {
+            Setting::setValue('shipping_cost', $request->shipping_cost);
+        }
+        if ($request->has('tax_percentage')) {
+            Setting::setValue('tax_percentage', $request->tax_percentage);
+        }
+        return response_success('Shipping cost updated successfully.', [
+            'shipping_cost' => (float) Setting::getValue('shipping_cost', 0),
+            'tax_percentage' => (float) Setting::getValue('tax_percentage', 0),
+        ]);
+    }
+    public function getTaxAndShipping()
+    {
+        $shippingCost = Setting::getValue('shipping_cost', 0);
+        $taxPercentage = Setting::getValue('tax_percentage', 0);
+
+        return response_success('Tax and shipping info fetched successfully.', [
+            'shipping_cost' => (float) $shippingCost,
+            'tax_percentage' => (float) $taxPercentage,
+        ]);
     }
 }
