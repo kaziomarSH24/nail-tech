@@ -40,6 +40,7 @@ class FinanceController extends Controller
             ->select('type', DB::raw('SUM(amount) as total'))
             ->groupBy('type')
             ->pluck('total', 'type');
+            
 
         $income = (float) ($summaryStats['income'] ?? 0);
         $expense = (float) ($summaryStats['expense'] ?? 0);

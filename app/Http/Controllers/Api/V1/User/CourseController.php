@@ -11,6 +11,7 @@ use App\Services\CourseService;
 use App\Services\PaymentService;
 use Illuminate\Http\Request;
 use App\Models\LessonProgress;
+use App\Models\Setting;
 use App\Services\RewardService;
 
 class CourseController extends Controller
@@ -193,6 +194,7 @@ class CourseController extends Controller
         $request->validate([
             'points_to_redeem' => 'sometimes|integer|min:0'
         ]);
+        $taxRate = (float) Setting::getValue('tax_percentage', 0);
         $user = auth()->user();
         $course = Course::where('is_published', true)->findOrFail($courseId);
 

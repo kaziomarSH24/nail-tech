@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\CheckoutRequest;
 use App\Models\Order;
 use App\Models\Product;
+use App\Models\Setting;
 use App\Services\Admin\ShopifyService;
 use App\Services\PaymentService;
 use App\Services\RewardService;
@@ -27,8 +28,8 @@ class ShopController extends Controller
     {
         $user = auth()->user();
 
-        $taxRate = (float) \App\Models\Setting::getValue('tax_percentage', 0);
-        $shippingCost = (float) \App\Models\Setting::getValue('shipping_cost', 0);
+        $taxRate = (float) Setting::getValue('tax_percentage', 0);
+        $shippingCost = (float) Setting::getValue('shipping_cost', 0);
 
         $customerInfo = [
             'first_name' => $request->first_name,
