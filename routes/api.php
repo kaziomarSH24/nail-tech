@@ -31,6 +31,7 @@ use App\Http\Controllers\Api\V1\User\MoodBoardController;
 use App\Http\Controllers\Api\V1\User\OrderController;
 use App\Http\Controllers\Api\V1\User\RedemptionController;
 use App\Http\Controllers\Api\V1\User\ShopController;
+use App\Http\Controllers\Api\V1\User\TodoController;
 use App\Http\Controllers\Api\V1\User\UserRewardController;
 use Laravel\Cashier\Http\Controllers\WebhookController as ControllersWebhookController;
 
@@ -228,6 +229,7 @@ Route::middleware('auth:sanctum', 'throttle:api')->prefix('v1')->group(function 
     Route::get('/all/courses', [UserCourseController::class, 'getCourses']);
     //**Appointment Routes */
     Route::apiResource('appointments', AppointmentControll::class)->except(['create', 'edit']);
+    Route::get('appointment/yearly-status', [AppointmentControll::class, 'getYearlyAppointmentStatus']);
     //**Finance Records Routes (income tracker) */
     Route::apiResource('finance-records', FinanceController::class)->except(['create', 'edit']);
     //analytics data
@@ -255,6 +257,10 @@ Route::middleware('auth:sanctum', 'throttle:api')->prefix('v1')->group(function 
     Route::get('/user/rewards', UserRewardController::class)->name('api.v1.user.rewards');
     //Redeem points
     Route::post('/user/rewards/redeem', [RedemptionController::class, 'calculateDiscount'])->name('api.v1.user.rewards.redeem');
+
+    //--- Todo Routes ---
+    Route::apiResource('todos', TodoController::class)->except(['create', 'edit']);
+    Route::put('/todos/{id}/toggle', [TodoController::class, 'toggleStatus']);
 
 
 

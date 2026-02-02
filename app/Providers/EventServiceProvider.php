@@ -11,10 +11,12 @@ use App\Models\Order;
 use App\Models\PointHistory;
 use App\Models\Product;
 use App\Models\Setting;
+use App\Models\Todo;
 use App\Models\UserAppointment;
 use App\Models\UserFinanceRecord;
 use App\Observers\AppointmentObserver;
 use App\Observers\CourseObserver;
+use App\Observers\FaqObserver;
 use App\Observers\FinanceObserver;
 use App\Observers\LessonsObserver;
 use App\Observers\MoodBoardImageObserver;
@@ -22,6 +24,8 @@ use App\Observers\MoodBoardObserver;
 use App\Observers\OrderObserver;
 use App\Observers\PointHistoryObserver;
 use App\Observers\ProductObserver;
+use App\Observers\SettingObserver;
+use App\Observers\TodoObserver;
 use Illuminate\Foundation\Support\Providers\EventServiceProvider as ServiceProvider;
 
 class EventServiceProvider extends ServiceProvider
@@ -71,7 +75,8 @@ class EventServiceProvider extends ServiceProvider
         MoodBoardImage::observe(MoodBoardImageObserver::class);
         Order::observe(OrderObserver::class);
         PointHistory::observe(PointHistoryObserver::class);
-        Setting::observe(\App\Observers\SettingObserver::class);
-        Faq::observe(\App\Observers\FaqObserver::class);
+        Setting::observe(SettingObserver::class);
+        Faq::observe(FaqObserver::class);
+        Todo::observer(TodoObserver::class);
     }
 }
