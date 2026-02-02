@@ -26,6 +26,7 @@ use App\Http\Controllers\Api\V1\Payment\StripePortalController;
 use App\Http\Controllers\Api\V1\Payment\SubscriptionController;
 use App\Http\Controllers\Api\V1\User\AppointmentControll;
 use App\Http\Controllers\Api\V1\User\CourseController as UserCourseController;
+use App\Http\Controllers\Api\V1\User\DailyReflectionController;
 use App\Http\Controllers\Api\V1\User\FinanceController;
 use App\Http\Controllers\Api\V1\User\MoodBoardController;
 use App\Http\Controllers\Api\V1\User\OrderController;
@@ -261,6 +262,10 @@ Route::middleware('auth:sanctum', 'throttle:api')->prefix('v1')->group(function 
     //--- Todo Routes ---
     Route::apiResource('todos', TodoController::class)->except(['create', 'edit']);
     Route::put('/todos/{id}/toggle', [TodoController::class, 'toggleStatus']);
+
+    //--- Daily Reflection Routes ---
+    Route::apiResource('daily-reflections', DailyReflectionController::class)->except(['update','create', 'edit']);
+    Route::get('/daily-reflection/monthly-status', [DailyReflectionController  ::class, 'getMonthlyStatus']);
 
 
 
