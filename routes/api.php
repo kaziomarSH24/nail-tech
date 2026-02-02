@@ -229,7 +229,7 @@ Route::middleware('auth:sanctum', 'throttle:api')->prefix('v1')->group(function 
     Route::get('/all/courses', [UserCourseController::class, 'getCourses']);
     //**Appointment Routes */
     Route::apiResource('appointments', AppointmentControll::class)->except(['create', 'edit']);
-    Route::get('appointment/yearly-status', [AppointmentControll::class, 'getYearlyAppointmentStatus']);
+    Route::get('appointment/yearly-status', [AppointmentControll::class, 'getMonthlyAppointments']);
     //**Finance Records Routes (income tracker) */
     Route::apiResource('finance-records', FinanceController::class)->except(['create', 'edit']);
     //analytics data

@@ -95,36 +95,31 @@ class AppointmentControll extends Controller
         return response_success('Appointment deleted successfully.');
     }
 
-    public function getYearlyAppointmentStatus(Request $request)
+    public function getMonthlyAppointments(Request $request)
     {
+        $request->validate([
+            'year' => 'required|integer',
+            'month' => 'required|integer|min:1|max:12',
+        ]);
 
         $userId = auth()->id();
-        $year = $request->input('year', Carbon::now()->year);
-        $appointments = UserAppointment::where('user_id', $userId)
-            ->whereYear('appointment_at', $year)
-            ->get(['appointment_at']);
 
-        $monthlyData = array_fill(0, 12, []);
+        $appointmentDays = UserAppointment::where('user_id', $userId)
+            ->whereYear('appointment_at', $request->year)
+            ->whereMonth('appointment_at', $request->month)
+            ->get(['appointment_at'])
+            ->map(function ($apt) {
 
-        foreach ($appointments as $apt) {
-            $date = Carbon::parse($apt->appointment_at);
-
-            $monthIndex = $date->month - 1;
-
-            $day = $date->day;
-            if (!in_array($day, $monthlyData[$monthIndex])) {
-                $monthlyData[$monthIndex][] = $day;
-            }
-        }
-
-        foreach ($monthlyData as $index => $days) {
-            sort($monthlyData[$index]);
-        }
+                return \Carbon\Carbon::parse($apt->appointment_at)->day;
+            })
+            ->unique()
+            ->values()
+            ->all();
 
         return response()->json([
             'ok' => true,
-            'message' => "Appointment dates for year {$year} retrieved.",
-            'data' => $monthlyData
+            'message' => "Appointments retrieved.",
+            'data' => $appointmentDays 
         ]);
     }
 }
