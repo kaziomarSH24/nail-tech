@@ -8,6 +8,7 @@ use App\Http\Resources\AppointmentResource;
 use App\Models\User;
 use App\Models\UserAppointment;
 use App\Services\UserAppointmentService;
+use Carbon\Carbon;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\Request;
 
@@ -27,7 +28,7 @@ class AppointmentControll extends Controller
     {
         $qc = function ($query) {
             $query->where('user_id', auth()->id());
-            if(request()->has('date')) {
+            if (request()->has('date')) {
                 $query->whereDate('appointment_at', request()->date);
             }
         };
@@ -92,5 +93,38 @@ class AppointmentControll extends Controller
     {
         $this->appointment->delete($appointment->id);
         return response_success('Appointment deleted successfully.');
+    }
+
+    public function getYearlyAppointmentStatus(Request $request)
+    {
+
+        $userId = auth()->id();
+        $year = $request->input('year', Carbon::now()->year);
+        $appointments = UserAppointment::where('user_id', $userId)
+            ->whereYear('appointment_at', $year)
+            ->get(['appointment_at']);
+
+        $monthlyData = array_fill(0, 12, []);
+
+        foreach ($appointments as $apt) {
+            $date = Carbon::parse($apt->appointment_at);
+
+            $monthIndex = $date->month - 1;
+
+            $day = $date->day;
+            if (!in_array($day, $monthlyData[$monthIndex])) {
+                $monthlyData[$monthIndex][] = $day;
+            }
+        }
+
+        foreach ($monthlyData as $index => $days) {
+            sort($monthlyData[$index]);
+        }
+
+        return response()->json([
+            'ok' => true,
+            'message' => "Appointment dates for year {$year} retrieved.",
+            'data' => $monthlyData
+        ]);
     }
 }
