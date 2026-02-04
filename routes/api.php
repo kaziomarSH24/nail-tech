@@ -34,6 +34,7 @@ use App\Http\Controllers\Api\V1\User\RedemptionController;
 use App\Http\Controllers\Api\V1\User\ShopController;
 use App\Http\Controllers\Api\V1\User\TodoController;
 use App\Http\Controllers\Api\V1\User\UserRewardController;
+use App\Http\Controllers\Api\V1\User\DashboardController as UserDashboardController;
 use Laravel\Cashier\Http\Controllers\WebhookController as ControllersWebhookController;
 
 Route::post(
@@ -224,12 +225,14 @@ Route::middleware('auth:sanctum', 'throttle:api')->prefix('v1')->group(function 
     // Route::get('/courses/{courseId}/lessons/{lessonId}/access', [UserCourseController::class, 'accessLesson']);
     // --- Home Page Routes ---
     Route::get('/home', [UserCourseController::class, 'getHomeData']);
+    Route::get('/dashboard', [UserDashboardController::class, 'getHomeData']);
     // --- See All Routes (With Pagination) ---
     Route::get('/course/popular', [UserCourseController::class, 'getPopularCourses']);
     Route::get('/course/trending', [UserCourseController::class, 'getTrendingCourses']);
     Route::get('/all/courses', [UserCourseController::class, 'getCourses']);
     //**Appointment Routes */
     Route::apiResource('appointments', AppointmentControll::class)->except(['create', 'edit']);
+    Route::put('/appointments/{appointment}/status', [AppointmentControll::class, 'updateStatus']);
     Route::get('appointment/yearly-status', [AppointmentControll::class, 'getMonthlyAppointments']);
     //**Finance Records Routes (income tracker) */
     Route::apiResource('finance-records', FinanceController::class)->except(['create', 'edit']);
@@ -266,7 +269,7 @@ Route::middleware('auth:sanctum', 'throttle:api')->prefix('v1')->group(function 
     //--- Daily Reflection Routes ---
     Route::apiResource('daily-reflections', DailyReflectionController::class)->except(['update','create', 'edit']);
     Route::get('/daily-reflection/monthly-status', [DailyReflectionController  ::class, 'getMonthlyStatus']);
-
+    Route::get('/daily-reflection/current-streak', [DailyReflectionController  ::class, 'getCurrentStreak']);
 
 
 

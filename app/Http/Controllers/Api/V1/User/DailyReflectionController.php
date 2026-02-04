@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\V1\User;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\DailyReflectionRequest;
+use App\Http\Resources\DailyReflectionResource;
 use App\Models\DailyReflection;
 use App\Services\DailyReflectionService;
 use Illuminate\Http\Request;
@@ -28,7 +29,10 @@ class DailyReflectionController extends Controller
         if($reflections->isEmpty()){
             return response_error('No daily reflections found.', [], 404);
         }
-        return response_success('Daily reflections retrieved successfully.', $reflections);
+        return DailyReflectionResource::collection($reflections)->additional([
+            'ok' => true,
+            'message' => 'Daily reflections retrieved successfully.',
+        ]);
     }
 
 
@@ -53,7 +57,10 @@ class DailyReflectionController extends Controller
     {
         $data = $this->dailyReflectionService->getById($daily_reflection->id);
 
-        return response_success($data, 'Daily reflection retrieved successfully.');
+        return DailyReflectionResource::make($data)->additional([
+            'ok' => true,
+            'message' => 'Daily reflection retrieved successfully.',
+        ]);
     }
 
 
@@ -89,15 +96,23 @@ class DailyReflectionController extends Controller
             ->sort()
             ->values()
             ->all();
-        $currentStreak = $this->dailyReflectionService->calculateStreak($userId);
+        // $currentStreak = $this->dailyReflectionService->calculateStreak($userId);
 
         return response()->json([
             'ok' => true,
             'message' => "Reflection status for {$request->month}-{$request->year} retrieved.",
             'data' => $entryDays,
-            'meta' => [
-                'current_streak' => $currentStreak
-            ]
+            // 'meta' => [
+            //     'current_streak' => $currentStreak
+            // ]
         ]);
+    }
+
+    public function getCurrentStreak()
+    {
+        $userId = auth()->id();
+        $currentStreak = $this->dailyReflectionService->calculateStreak($userId);
+
+        return response_success('Current reflection streak retrieved successfully.', $currentStreak);
     }
 }

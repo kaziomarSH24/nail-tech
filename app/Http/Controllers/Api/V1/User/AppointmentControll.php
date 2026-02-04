@@ -119,7 +119,18 @@ class AppointmentControll extends Controller
         return response()->json([
             'ok' => true,
             'message' => "Appointments retrieved.",
-            'data' => $appointmentDays 
+            'data' => $appointmentDays
         ]);
+    }
+
+    //update appointment status
+    public function updateStatus(Request $request, UserAppointment $appointment)
+    {
+        $request->validate([
+            'status' => 'required|in:completed,cancelled',
+        ]);
+        $appointment->status = $request->status;
+        $appointment->save();
+        return response_success('Appointment status updated successfully.');
     }
 }
