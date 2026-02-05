@@ -4,8 +4,10 @@ namespace App\Listeners;
 
 use App\Models\Enrollment;
 use App\Models\Order;
+use App\Models\Product;
 use App\Models\Transaction;
 use App\Models\User;
+use App\Models\UserInventory;
 use App\Services\Admin\ShopifyService;
 use App\Services\RewardService;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -232,6 +234,35 @@ class StripeEventListener implements ShouldQueue
                 $rewardService->distributePoints($order);
                 $shopifyService->syncOrderToShopify($order);
 
+                foreach ($order->items as $item) {
+
+                    $localProduct = Product::where('shopify_variant_id', $item['variant_id'])->first();
+
+                    if ($localProduct) {
+                        $inventory = UserInventory::where('user_id', $order->user_id)
+                            ->where('source', 'shop')
+                            ->where('linked_product_id', $localProduct->id)
+                            ->first();
+
+                        if ($inventory) {
+                            $inventory->increment('current_quantity', $item['quantity']);
+                            $inventory->update(['last_restocked_at' => now()]);
+                        } else {
+                            UserInventory::create([
+                                'user_id' => $order->user_id,
+                                'item_name' => $localProduct->title,
+                                'source' => 'shop',
+                                'linked_product_id' => $localProduct->id,
+                                'current_quantity' => $item['quantity'],
+                                'image' => $localProduct->image_url,
+                                'reorder_threshold' => 2,
+                                'reminder_frequency_days' => 7,
+                                'next_reminder_at' => now()->addDays(7),
+                                'last_restocked_at' => now()
+                            ]);
+                        }
+                    }
+                }
                 \Log::info("Shopify Order Sync Successful for Local Order #{$order->id}");
             } catch (\Exception $e) {
                 \Log::error("Shopify Order Sync Failed for Local Order #{$order->id}: " . $e->getMessage());

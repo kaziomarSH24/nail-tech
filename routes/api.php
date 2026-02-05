@@ -35,6 +35,7 @@ use App\Http\Controllers\Api\V1\User\ShopController;
 use App\Http\Controllers\Api\V1\User\TodoController;
 use App\Http\Controllers\Api\V1\User\UserRewardController;
 use App\Http\Controllers\Api\V1\User\DashboardController as UserDashboardController;
+use App\Http\Controllers\Api\V1\User\UserInventoryController;
 use Laravel\Cashier\Http\Controllers\WebhookController as ControllersWebhookController;
 
 Route::post(
@@ -270,6 +271,11 @@ Route::middleware('auth:sanctum', 'throttle:api')->prefix('v1')->group(function 
     Route::apiResource('daily-reflections', DailyReflectionController::class)->except(['update','create', 'edit']);
     Route::get('/daily-reflection/monthly-status', [DailyReflectionController  ::class, 'getMonthlyStatus']);
     Route::get('/daily-reflection/current-streak', [DailyReflectionController  ::class, 'getCurrentStreak']);
+
+    //**--- User Inventory Routes ---*/
+    Route::apiResource('inventory', UserInventoryController::class)->except(['create', 'edit']);
+    Route::post('inventory/{id}/restock', [UserInventoryController::class, 'restock']);
+    Route::post('inventory/{id}/use', [UserInventoryController::class, 'consumeItem']);
 
 
 

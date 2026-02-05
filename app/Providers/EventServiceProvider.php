@@ -74,5 +74,7 @@ class EventServiceProvider extends ServiceProvider
         Setting::observe(\App\Observers\SettingObserver::class);
         Faq::observe(\App\Observers\FaqObserver::class);
         \App\Models\Todo::observe(\App\Observers\TodoObserver::class);
+        \App\Models\UserInventory::observe(\App\Observers\InventoryObserver::class);
+
     }
 }
