@@ -8,6 +8,8 @@ use App\Models\Product;
 use App\Models\Transaction;
 use App\Models\User;
 use App\Models\UserInventory;
+use App\Notifications\NewCourseEnrollment;
+use App\Notifications\NewOrderNotification;
 use App\Services\Admin\ShopifyService;
 use App\Services\RewardService;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -18,6 +20,7 @@ use Stripe\Stripe;
 use Stripe\SetupIntent;
 use Stripe\PaymentMethod;
 use Exception;
+use Illuminate\Support\Facades\Notification;
 use Throwable;
 
 class StripeEventListener implements ShouldQueue
@@ -93,6 +96,11 @@ class StripeEventListener implements ShouldQueue
         } elseif ($type === 'shopify_purchase') {
             $this->processShopifyOrder($metadata);
         }
+    }
+
+    public function handleChargeSucceeded(array $payload): void
+    {
+        return;
     }
 
     // --- Helper Methods ---
@@ -184,6 +192,20 @@ class StripeEventListener implements ShouldQueue
                     $rewardService->distributePoints($enrollment);
 
                     Log::info("Enrollment Activated & Rewards Processed for ID: {$enrollment->id}");
+                    //send notification
+                    $admins = User::role(['super_admin', 'admin'])->get();
+                    Notification::send($admins, new NewCourseEnrollment($enrollment));
+                    activity()
+                        ->performedOn($enrollment)
+                        ->causedBy($enrollment->user)
+                        ->withProperties([
+                            'title' => 'New Course Sold',
+                            'course_name' => $enrollment->course->title,
+                            'amount' => $enrollment->final_amount,
+                            'icon' => 'book-open',
+                            'type' => 'course'
+                        ])
+                        ->log('Course Enrollment');
                 } else {
                     Log::info("Enrollment was ALREADY active for ID: {$enrollment->id}");
                 }
@@ -203,6 +225,21 @@ class StripeEventListener implements ShouldQueue
                     (new RewardService())->distributePoints($enrollment);
 
                     Log::warning("Created FRESH Enrollment (Fallback) for User {$userId}, Course {$courseId}");
+                    //send notification
+                    $admins = User::role(['super_admin', 'admin'])->get();
+                    Notification::send($admins, new NewCourseEnrollment($enrollment));
+
+                    activity()
+                        ->performedOn($enrollment)
+                        ->causedBy($enrollment->user)
+                        ->withProperties([
+                            'title' => 'New Course Sold',
+                            'course_name' => $enrollment->course->title,
+                            'amount' => $enrollment->final_amount,
+                            'icon' => 'book-open',
+                            'type' => 'course'
+                        ])
+                        ->log('Course Enrollment');
                 } else {
                     Log::error("Enrollment failed: Missing enrollment_id, user_id, or payable_id in metadata");
                 }
@@ -264,6 +301,22 @@ class StripeEventListener implements ShouldQueue
                     }
                 }
                 \Log::info("Shopify Order Sync Successful for Local Order #{$order->id}");
+                //send notification
+                $admins = User::role(['super_admin', 'admin'])->get();
+                Notification::send($admins, new NewOrderNotification($order));
+
+                //send activity log
+                activity()
+                    ->performedOn($order)
+                    ->causedBy($order->user)
+                    ->withProperties([
+                        'title' => 'New Order Placed',
+                        'order_number' => $order->shopify_order_id,
+                        'amount' => $order->final_amount,
+                        'icon' => 'shopping-cart',
+                        'type' => 'order'
+                    ])
+                    ->log('New Order Placed');
             } catch (\Exception $e) {
                 \Log::error("Shopify Order Sync Failed for Local Order #{$order->id}: " . $e->getMessage());
             }

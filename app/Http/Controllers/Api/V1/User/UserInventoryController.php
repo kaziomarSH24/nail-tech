@@ -7,6 +7,7 @@ use App\Http\Requests\StoreInventoryRequest;
 use App\Http\Requests\UpdateInventoryRequest;
 use App\Models\User;
 use App\Models\UserInventory;
+use App\Notifications\LowStockAlert;
 use App\Services\UserInventoryService;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\Request;
@@ -81,9 +82,24 @@ class UserInventoryController extends Controller
         $inventory = $this->userInventoryService->getById($id);
         $this->authorize('update', $inventory);
         $updated = $this->userInventoryService->useItem($id, $request->quantity ?? 1);
-    
-        $status = $updated->current_quantity <= $updated->reorder_threshold ? 'Low Stock Alert!' : 'Stock updated.';
+        if ($updated->current_quantity <= $updated->reorder_threshold) {
+            $updated->user->notify(new LowStockAlert($updated));
+            $status = 'Low Stock Alert! Notification sent.';
+        } else {
+            $status = 'Stock updated.';
+        }
+        // $status = $updated->current_quantity <= $updated->reorder_threshold ? 'Low Stock Alert!' : 'Stock updated.';
 
         return response_success($status, $updated);
+    }
+
+
+    public function getShopRestockList()
+    {
+        $items = $this->userInventoryService->getShopRestockItems();
+        if ($items->isEmpty()) {
+            return response_error('No shop restock items found.', [], 404);
+        }
+        return response_success('Shop restock items retrieved successfully.', $items);
     }
 }

@@ -121,4 +121,12 @@ class UserInventoryService extends BaseService
         // dd($newQuantity);
         return $this->update($id, ['current_quantity' => $newQuantity]);
     }
+
+    public function getShopRestockItems()
+    {
+        return $this->model->where('user_id', auth()->id())
+            ->where('source', 'shop')
+            ->whereColumn('current_quantity', '<=', 'reorder_threshold')
+            ->get();
+    }
 }
