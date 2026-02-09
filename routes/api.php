@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\V1\Admin\AdminDashboardController;
 use App\Http\Controllers\Api\V1\Admin\FaqController;
 use App\Http\Controllers\Api\V1\Admin\IncomeReportController;
 use App\Http\Controllers\Api\V1\Admin\ProductController;
@@ -35,7 +36,9 @@ use App\Http\Controllers\Api\V1\User\ShopController;
 use App\Http\Controllers\Api\V1\User\TodoController;
 use App\Http\Controllers\Api\V1\User\UserRewardController;
 use App\Http\Controllers\Api\V1\User\DashboardController as UserDashboardController;
+use App\Http\Controllers\Api\V1\User\UserInventoryController;
 use Laravel\Cashier\Http\Controllers\WebhookController as ControllersWebhookController;
+use App\Http\Controllers\Api\V1\User\SettingsController as UserSettingsController;
 
 Route::post(
     '/v1/stripe/webhook',
@@ -163,6 +166,11 @@ Route::middleware('auth:sanctum', 'throttle:api')->prefix('v1')->group(function 
 
 
     Route::middleware(['role:admin|super_admin'])->prefix('admin')->group(function () {
+        //admin dashboard
+        Route::get('/dashboard', AdminDashboardController::class)->name('api.v1.admin.dashboard');
+        Route::get('/chart/income', [AdminDashboardController::class, 'getIncomeChart']);
+        Route::get('/chart/users', [AdminDashboardController::class, 'getNewUsersChart']);
+
         Route::get('/products', [ProductController::class, 'index'])->withoutMiddleware('role:admin|super_admin'); // Get List
         Route::get('/products/{id}', [ProductController::class, 'show'])->withoutMiddleware('role:admin|super_admin'); // Get Details
         Route::get('/product/categories', [ProductController::class, 'getCategories'])->withoutMiddleware('role:admin|super_admin'); // Get Categories
@@ -199,15 +207,15 @@ Route::middleware('auth:sanctum', 'throttle:api')->prefix('v1')->group(function 
         //Settings Routes
         Route::prefix('settings')->name('api.v1.admin.settings.')->group(function () {
             // Terms Routes
-            Route::get('/terms', [SettingController::class, 'getTerms']);
+            Route::get('/terms', [SettingController::class, 'getTerms'])->withoutMiddleware('role:admin|super_admin');
             Route::post('/terms', [SettingController::class, 'updateTerms']);
 
             // Contact Info Routes
-            Route::get('/contact-info', [SettingController::class, 'getContactInfo']);
+            Route::get('/contact-info', [SettingController::class, 'getContactInfo'])->withoutMiddleware('role:admin|super_admin');
             Route::post('/contact-info', [SettingController::class, 'updateContactInfo']);
             Route::delete('/contact-info', [SettingController::class, 'deleteContactInfo']);
             //tex preference
-            Route::get('/tax-shipping', [SettingController::class, 'getTaxAndShipping']);
+            Route::get('/tax-shipping', [SettingController::class, 'getTaxAndShipping'])->withoutMiddleware('role:admin|super_admin');
             Route::post('/tax-shipping', [SettingController::class, 'updateTaxAndShipping']);
 
             // faq
@@ -267,11 +275,21 @@ Route::middleware('auth:sanctum', 'throttle:api')->prefix('v1')->group(function 
     Route::put('/todos/{id}/toggle', [TodoController::class, 'toggleStatus']);
 
     //--- Daily Reflection Routes ---
-    Route::apiResource('daily-reflections', DailyReflectionController::class)->except(['update','create', 'edit']);
-    Route::get('/daily-reflection/monthly-status', [DailyReflectionController  ::class, 'getMonthlyStatus']);
-    Route::get('/daily-reflection/current-streak', [DailyReflectionController  ::class, 'getCurrentStreak']);
+    Route::apiResource('daily-reflections', DailyReflectionController::class)->except(['update', 'create', 'edit']);
+    Route::get('/daily-reflection/monthly-status', [DailyReflectionController::class, 'getMonthlyStatus']);
+    Route::get('/daily-reflection/current-streak', [DailyReflectionController::class, 'getCurrentStreak']);
 
+    //**--- User Inventory Routes ---*/
+    Route::get('inventory/shop-restock', [UserInventoryController::class, 'getShopRestockList']);
+    Route::apiResource('inventory', UserInventoryController::class)->except(['create', 'edit']);
+    Route::post('inventory/{id}/restock', [UserInventoryController::class, 'restock']);
+    Route::post('inventory/{id}/use', [UserInventoryController::class, 'consumeItem']);
 
+    //**--- user notification */
+    Route::get('/settings/notifications', [UserSettingsController::class, 'getNotificationSettings']);
+    Route::post('/settings/notifications', [UserSettingsController::class, 'updateNotificationSettings']);
+    //faq get route
+    Route::get('/settings/faqs', [UserSettingsController::class, 'getFaqs']);
 
 
 

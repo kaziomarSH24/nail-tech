@@ -16,7 +16,7 @@ class NotificationController extends Controller
     public function __construct(NotificationService $notificationService)
     {
         $this->notificationService = $notificationService;
-        $this->authorizeResource(DatabaseNotification::class, 'notification');
+        // $this->authorizeResource(DatabaseNotification::class, 'notification');
     }
 
     public function index()

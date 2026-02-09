@@ -137,12 +137,12 @@ class MoodBoardController extends Controller
                 85,
                 true
             );
-
+            // dd($request->input("title"));
             if ($path) {
                 $this->moodBoardService->addImageToBoard($data['mood_board_id'], [
                     'image_path' => $path,
-                    'title' => $request->input("titles.{$index}"),
-                    'description' => $request->input("descriptions.{$index}"),
+                    'title' => $request->input("title"),
+                    'description' => $request->input("description"),
                 ]);
                 $uploadedFiles[] = $path;
             }

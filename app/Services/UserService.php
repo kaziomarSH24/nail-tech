@@ -60,4 +60,18 @@ class UserService extends BaseService
     }
 
 
+    //update settings
+    public function updateSettings(array $data)
+    {
+        $user = auth()->user();
+        $currentSettings = $user->notification_settings ?? [];
+
+        $newSettings = array_merge($currentSettings, $data);
+
+        $user->notification_settings = $newSettings;
+        $user->save();
+        return $user->notification_settings;
+    }
+
+
 }

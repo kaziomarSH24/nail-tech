@@ -133,8 +133,7 @@ class ShopifyService extends BaseService
             'province'   => $addressDetails['province'] ?? '',
         ];
 
-        Log::info("address (Fixed):", $shopifyAddress);
-        Log::info("=================Test Order Sync to Shopify33333=================");
+        
         $lineItems = collect($order->items)->map(function ($item) {
             return [
                 'variant_id' => $item['variant_id'],

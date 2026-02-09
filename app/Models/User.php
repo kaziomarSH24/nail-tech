@@ -60,6 +60,7 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'notification_settings' => 'array',
         ];
     }
 
@@ -72,10 +73,11 @@ class User extends Authenticatable
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
-            ->logOnly(['name', 'email']) //customize the fields you want to log
+            ->logOnly(['name', 'email', 'phone',]) //customize the fields you want to log
             ->logOnlyDirty() //log only the changed fields
-            ->setDescriptionForEvent(fn(string $eventName) => "User has been {$eventName}")
-            ->useLogName('user_activity');
+            ->dontLogIfAttributesChangedOnly(['updated_at', 'password', 'remember_token', 'email_verified_at'])
+           ->setDescriptionForEvent(fn(string $eventName) => "User profile has been {$eventName}")
+            ->useLogName('system_audit');
     }
 
     //get avatar
@@ -112,5 +114,16 @@ class User extends Authenticatable
     public function enrollments()
     {
         return $this->hasMany(Enrollment::class);
+    }
+
+
+    public function getNotificationSettingsAttribute($value)
+    {
+        $defaults = [
+            'appointment_reminder' => true,
+            // 'product_restock_update' => false,
+            'new_courses' => true,
+        ];
+        return array_merge($defaults, json_decode($value, true) ?? []);
     }
 }

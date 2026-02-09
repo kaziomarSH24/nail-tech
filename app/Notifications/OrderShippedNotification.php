@@ -49,10 +49,18 @@ class OrderShippedNotification extends Notification implements ShouldQueue
     public function toArray($notifiable)
     {
         return [
-            'order_id' => $this->order->id,
-            'title' => 'Order Shipped! 🚚',
-            'message' => "Your order #{$this->order->id} has been shipped via {$this->order->tracking_company}.",
-            'tracking_number' => $this->order->tracking_number,
+            'title'   => 'Order Shipped!',
+            'message' => "Order #{$this->order->id} shipped via {$this->order->tracking_company}.",
+            'icon'    => 'truck',     
+            'type'    => 'shipped',   
+            'action'  => [
+                'link'        => '/user/orders/' . $this->order->id,
+                'is_external' => false
+            ],
+            'meta'    => [
+                'tracking_number' => $this->order->tracking_number,
+                'order_id'        => $this->order->id
+            ]
         ];
     }
 
@@ -68,7 +76,7 @@ class OrderShippedNotification extends Notification implements ShouldQueue
         return [
             'tokens' => $tokens,
 
-            'title' => 'Order Shipped! 🚚',
+            'title' => 'Order Shipped!',
             'body' => "Good news! Your order #{$this->order->id} has been shipped{$courierName}. Track it now.",
 
             'data' => [

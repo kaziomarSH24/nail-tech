@@ -100,7 +100,7 @@ class RewardService extends BaseService
     /**
      * Redeem points (Deduct from user balance)
      */
-    public function redeemPoints(Order $order)
+    public function redeemPoints($order)
     {
         $pointsToRedeem = $order->redeemed_points;
 
