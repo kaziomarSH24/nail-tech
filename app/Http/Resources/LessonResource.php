@@ -32,19 +32,21 @@ class LessonResource extends JsonResource
     }
 
     private function formatDuration()
-    {
+{
+    $totalSeconds = $this->duration;
 
+    if (!$totalSeconds) return '0s';
 
-        $totalSeconds = $this->duration;
-
-        if (!$totalSeconds) return '0m';
-        $hours = floor($totalSeconds / 3600);
-        $minutes = floor(($totalSeconds % 3600) / 60);
-
-        if ($hours > 0) {
-            return "{$hours}h {$minutes}m";
-        }
-
-        return "{$minutes}m";
+    $hours = floor($totalSeconds / 3600);
+    $minutes = floor(($totalSeconds % 3600) / 60);
+    $seconds = $totalSeconds % 60;
+    if ($hours > 0) {
+        return "{$hours}h {$minutes}m {$seconds}s";
     }
+    if ($minutes > 0) {
+        return "{$minutes}m {$seconds}s";
+    }
+    
+    return "{$seconds}s";
+}
 }

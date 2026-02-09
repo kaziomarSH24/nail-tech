@@ -45,11 +45,15 @@ class CourseResource extends JsonResource
         if (!$totalSeconds) return '0m';
         $hours = floor($totalSeconds / 3600);
         $minutes = floor(($totalSeconds % 3600) / 60);
+        $seconds = floor($totalSeconds % 60);
 
         if ($hours > 0) {
-            return "{$hours}h {$minutes}m";
+            return "{$hours}h {$minutes}m {$seconds}s";
+        }
+        if ($minutes > 0) {
+            return "{$minutes}m {$seconds}s";
         }
 
-        return "{$minutes}m";
+        return "{$seconds}s";
     }
 }
