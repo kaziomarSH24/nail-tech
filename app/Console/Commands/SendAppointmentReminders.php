@@ -20,7 +20,7 @@ class SendAppointmentReminders extends Command
             ->update(['status' => 'completed']);
 
         if ($expiredCount > 0) {
-            $this->info("✅ Auto-completed {$expiredCount} past appointments.");
+            $this->info(" Auto-completed {$expiredCount} past appointments.");
         }
 
 
@@ -63,7 +63,7 @@ class SendAppointmentReminders extends Command
 
                     $appointment->update(['is_reminder_sent' => true]);
 
-                    $this->info("⏰ Final Reminder sent to User ID: {$user->id}");
+                    $this->info("Final Reminder sent to User ID: {$user->id}");
                 }
             }
         }
