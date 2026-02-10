@@ -7,7 +7,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
-class NewOrderNotification extends Notification
+class NewOrderNotification extends Notification implements ShouldQueue
 {
     use Queueable;
     protected $order;
@@ -58,8 +58,8 @@ class NewOrderNotification extends Notification
         return [
             'title'   => 'New Shopify Order',
             'message' => 'Order #' . $this->order->shopify_order_id . ' received from Shopify.',
-            'icon'    => 'shopping-bag', 
-            'type'    => 'order',         
+            'icon'    => 'shopping-bag',
+            'type'    => 'order',
             'action'  => [
                 'link'        => "https://admin.shopify.com/store/{$storeName}/orders/{$shopifyOrderId}",
                 'is_external' => true

@@ -7,7 +7,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
-class LowStockAlert extends Notification
+class LowStockAlert extends Notification implements ShouldQueue
 {
     use Queueable;
 
@@ -39,8 +39,8 @@ class LowStockAlert extends Notification
         return [
         'title'   => 'Low Stock Alert!',
         'message' => "Only {$this->inventoryItem->current_quantity} left for '{$this->inventoryItem->item_name}'.",
-        'icon'    => 'alert-triangle', 
-        'type'    => 'low_stock',        
+        'icon'    => 'alert-triangle',
+        'type'    => 'low_stock',
         'action'  => [
             'link'        => '/admin/inventory/' . $this->inventoryItem->id,
             'is_external' => false

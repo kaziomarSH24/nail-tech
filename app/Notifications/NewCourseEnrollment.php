@@ -7,7 +7,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
-class NewCourseEnrollment extends Notification
+class NewCourseEnrollment extends Notification implements ShouldQueue
 {
     use Queueable;
     protected $enrollment;
@@ -43,8 +43,8 @@ class NewCourseEnrollment extends Notification
         return [
             'title'   => 'New Course Sold!',
             'message' => "{$user->name} enrolled in \"{$course->title}\"",
-            'icon'    => 'book-open', 
-            'type'    => 'course_enrollment',   
+            'icon'    => 'book-open',
+            'type'    => 'course_enrollment',
             'action'  => [
                 'link'        => '/admin/enrollments/' . $this->enrollment->id,
                 'is_external' => false

@@ -7,7 +7,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
-class WeeklyUserMilestone extends Notification
+class WeeklyUserMilestone extends Notification implements ShouldQueue
 {
     use Queueable;
     protected $count;
@@ -41,8 +41,8 @@ class WeeklyUserMilestone extends Notification
         return [
             'title'   => "{$this->count} New Users!",
             'message' => "{$this->count} new technicians joined this week.",
-            'icon'    => 'users',       
-            'type'    => 'user_milestone', 
+            'icon'    => 'users',
+            'type'    => 'user_milestone',
             'action'  => [
                 'link'        => '/admin/users',
                 'is_external' => false
