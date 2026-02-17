@@ -200,4 +200,12 @@ class CourseController extends Controller
 
         return response_success('Lesson deleted successfully.');
     }
+
+    //get single lesson details
+    public function getLesson($courseId, $lessonId)
+    {
+        $course = $this->courseService->getById($courseId);
+        $lesson = $course->lessons()->findOrFail($lessonId);
+        return response_success('Lesson retrieved successfully.', $lesson);
+    }
 }
