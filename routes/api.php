@@ -67,7 +67,7 @@ Route::prefix('v1/auth')->group(function () {
 // Route::post('/upload', [FileController::class, 'handleRequest'])->name('api.v1.file.upload');
 
 // --- Protected Routes (User must be logged in) ---
-Route::middleware('auth:sanctum', 'throttle:api')->prefix('v1')->group(function () {
+Route::middleware('auth:sanctum', 'throttle:api', 'active')->prefix('v1')->group(function () {
 
     // Auth related protected routes
     Route::prefix('auth')->name('api.v1.auth.')->group(function () {
@@ -188,12 +188,14 @@ Route::middleware('auth:sanctum', 'throttle:api')->prefix('v1')->group(function 
             ->withoutMiddleware(['throttle', 'throttle:api']);
         // Add Lesson to Course
         Route::post('/courses/{id}/lessons', [CourseController::class, 'addLesson']);
+        Route::get('/courses/{courseId}/lessons/{lessonId}', [CourseController::class, 'getLesson']);
         Route::put('/courses/{courseId}/lessons/{lessonId}', [CourseController::class, 'updateLesson']);
         Route::delete('/courses/{courseId}/lessons/{lessonId}', [CourseController::class, 'deleteLesson']);
 
         //user management
         Route::get('/users', [UserManagementController::class, 'index']);
         Route::get('/users/{id}', [UserManagementController::class, 'show']);
+        Route::put('/users/{id}/toggle-suspend', [UserManagementController::class, 'toggleSuspend']);
 
         //income report
         Route::get('/income-report', [IncomeReportController::class, 'index']);

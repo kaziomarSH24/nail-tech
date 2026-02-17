@@ -23,6 +23,7 @@ class UserResource extends JsonResource
             'avatar'     => $this->avatar_url,
             'status'     => $this->status,
             'address'    => $this->address,
+            'is_suspended' => $this->is_suspended,
             'created_at' => $this->created_at,
             'appointments' => AppointmentResource::collection($this->whenLoaded('appointments')),
             'enrollments' => EnrollmentResource::collection($this->whenLoaded('enrollments')),
