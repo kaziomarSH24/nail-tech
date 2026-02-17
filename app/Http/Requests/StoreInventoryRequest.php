@@ -16,6 +16,7 @@ class StoreInventoryRequest extends BaseRequest
     {
         return [
             'item_name' => 'required|string|max:255',
+            'price'=> 'required|numeric',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:5120', //5mb
             'source' => ['required', Rule::in(['shop', 'external'])],
             'linked_product_id' => 'nullable|exists:products,id|required_if:source,shop',

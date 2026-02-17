@@ -288,6 +288,7 @@ class StripeEventListener implements ShouldQueue
                             UserInventory::create([
                                 'user_id' => $order->user_id,
                                 'item_name' => $localProduct->title,
+                                'price' =>$localProduct->price,
                                 'source' => 'shop',
                                 'linked_product_id' => $localProduct->id,
                                 'current_quantity' => $item['quantity'],

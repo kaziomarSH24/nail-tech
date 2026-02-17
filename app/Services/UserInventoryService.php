@@ -18,6 +18,7 @@ class UserInventoryService extends BaseService
      * @var string
      */
     protected string $modelClass = UserInventory::class;
+    protected bool $cachePerUser = true;
 
     public function __construct()
     {

@@ -15,6 +15,7 @@ class DailyReflectionService extends BaseService
      * @var string
      */
     protected string $modelClass = DailyReflection::class;
+    protected bool $cachePerUser = true;
 
     public function __construct()
     {

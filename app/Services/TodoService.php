@@ -15,6 +15,7 @@ class TodoService extends BaseService
      * @var string
      */
     protected string $modelClass = Todo::class;
+    protected bool $cachePerUser = true;
 
     public function __construct()
     {
