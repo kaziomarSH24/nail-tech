@@ -209,11 +209,11 @@ Route::middleware('auth:sanctum', 'throttle:api', 'active')->prefix('v1')->group
         //Settings Routes
         Route::prefix('settings')->name('api.v1.admin.settings.')->group(function () {
             // Terms Routes
-            Route::get('/terms', [SettingController::class, 'getTerms'])->withoutMiddleware('role:admin|super_admin');
+            Route::get('/terms', [SettingController::class, 'getTerms'])->withoutMiddleware(['role:admin|super_admin', 'auth:sanctum']);
             Route::post('/terms', [SettingController::class, 'updateTerms']);
 
             // Contact Info Routes
-            Route::get('/contact-info', [SettingController::class, 'getContactInfo'])->withoutMiddleware('role:admin|super_admin');
+            Route::get('/contact-info', [SettingController::class, 'getContactInfo'])->withoutMiddleware(['role:admin|super_admin', 'auth:sanctum']);
             Route::post('/contact-info', [SettingController::class, 'updateContactInfo']);
             Route::delete('/contact-info', [SettingController::class, 'deleteContactInfo']);
             //tex preference

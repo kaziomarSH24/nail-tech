@@ -10,6 +10,7 @@ use App\Models\User;
 use App\Models\Product;
 use App\Models\Course;
 use App\Models\Order; // বা FinanceRecord
+use App\Models\Transaction;
 use Spatie\Activitylog\Models\Activity;
 
 class AdminDashboardController extends Controller
@@ -50,8 +51,10 @@ class AdminDashboardController extends Controller
         $courseGrowth = $this->calculateGrowth($totalCourses, $yesterdayCourses);
 
         // --- Total Income ---
-        $totalIncome = Order::sum('final_amount');
-        $yesterdayIncomeTotal = Order::where('created_at', '<', now()->subDay())->sum('final_amount');
+        // $totalIncome = Order::sum('final_amount');
+        $totalIncome = Transaction::where('status', 'success')->sum('amount');
+        // dd($totalIncome);
+        $yesterdayIncomeTotal = Transaction::where('status', 'success')->where('created_at', '<', now()->subDay())->sum('amount');
         $incomeGrowth = $this->calculateGrowth($totalIncome, $yesterdayIncomeTotal);
 
         return [
@@ -88,11 +91,11 @@ class AdminDashboardController extends Controller
 
     public function getIncomeChart(Request $request)
     {
-        $filter = $request->input('filter', 'weekly'); 
+        $filter = $request->input('filter', 'weekly');
 
         return response()->json([
             'ok' => true,
-            'data' => $this->getIncomeChartData($filter) 
+            'data' => $this->getIncomeChartData($filter)
         ]);
     }
 
@@ -101,11 +104,11 @@ class AdminDashboardController extends Controller
     // =================================================================
     public function getNewUsersChart(Request $request)
     {
-        $filter = $request->input('filter', 'weekly'); 
+        $filter = $request->input('filter', 'weekly');
 
         return response()->json([
             'ok' => true,
-            'data' => $this->getUserChartData($filter) 
+            'data' => $this->getUserChartData($filter)
         ]);
     }
 
@@ -123,9 +126,9 @@ class AdminDashboardController extends Controller
                 $date = now()->subDays($i);
                 $labels[] = $date->format('D');
 
-                $amount = Order::whereDate('created_at', $date)
-                    ->where('status', 'paid')
-                    ->sum('final_amount');
+                $amount = Transaction::whereDate('created_at', $date)
+                    ->where('status', 'success')
+                    ->sum('amount');
 
                 $data[] = (float) $amount;
             }
@@ -136,9 +139,9 @@ class AdminDashboardController extends Controller
 
                 $labels[] = "Week " . (4 - $i);
 
-                $amount = Order::whereBetween('created_at', [$startOfWeek, $endOfWeek])
-                    ->where('status', 'paid')
-                    ->sum('final_amount');
+                $amount = Transaction::whereBetween('created_at', [$startOfWeek, $endOfWeek])
+                    ->where('status', ' success')
+                    ->sum('amount');
 
                 $data[] = (float) $amount;
             }

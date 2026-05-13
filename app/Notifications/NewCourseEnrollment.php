@@ -46,7 +46,7 @@ class NewCourseEnrollment extends Notification implements ShouldQueue
             'icon'    => 'book-open',
             'type'    => 'course_enrollment',
             'action'  => [
-                'link'        => '/admin/enrollments/' . $this->enrollment->id,
+                'link'        => '/dashboard/user-management',
                 'is_external' => false
             ],
             'meta'    => [

@@ -44,7 +44,7 @@ class NewCourseAvailable extends Notification implements ShouldQueue
             'icon'    => 'book-open',
             'type'    => 'info',
             'action'  => [
-                'link' => '/courses/' . $this->course->id,
+                'link' => '/dashboard/courses-management',
                 'is_external' => false
             ]
         ];
