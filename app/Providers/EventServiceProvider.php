@@ -11,6 +11,7 @@ use App\Models\Order;
 use App\Models\PointHistory;
 use App\Models\Product;
 use App\Models\Setting;
+use App\Models\SupportTicket;
 use App\Models\User;
 use App\Models\UserAppointment;
 use App\Models\UserFinanceRecord;
@@ -23,6 +24,7 @@ use App\Observers\MoodBoardObserver;
 use App\Observers\OrderObserver;
 use App\Observers\PointHistoryObserver;
 use App\Observers\ProductObserver;
+use App\Observers\SupportTicketObserver;
 use App\Observers\UserObserver;
 use Illuminate\Foundation\Support\Providers\EventServiceProvider as ServiceProvider;
 
@@ -78,6 +80,8 @@ class EventServiceProvider extends ServiceProvider
         Faq::observe(\App\Observers\FaqObserver::class);
         \App\Models\Todo::observe(\App\Observers\TodoObserver::class);
         \App\Models\UserInventory::observe(\App\Observers\InventoryObserver::class);
+
+        SupportTicket::observe(SupportTicketObserver::class);
 
     }
 }

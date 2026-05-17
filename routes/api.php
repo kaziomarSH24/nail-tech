@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\V1\Admin\ProductController;
 use App\Http\Controllers\Api\V1\Admin\RewardSettingController;
 use App\Http\Controllers\Api\V1\Admin\SettingController;
 use App\Http\Controllers\Api\V1\Admin\StockController;
+use App\Http\Controllers\Api\V1\Admin\SupportTicketController;
 use App\Http\Controllers\Api\V1\Admin\UserManagementController;
 use App\Http\Controllers\Api\V1\Admin\WebhookController;
 use Illuminate\Support\Facades\Route;
@@ -63,6 +64,9 @@ Route::prefix('v1/auth')->group(function () {
     Route::post('/verify-password-otp', [PasswordController::class, 'verifyResetOtp'])->name('api.v1.auth.verifyResetOtp');
     Route::post('/reset-password-with-token', [PasswordController::class, 'resetPasswordWithToken'])->name('api.v1.auth.resetPasswordWithToken');
 });
+
+//public Route
+Route::post('v1/support/submit', [SupportTicketController::class, 'store']);
 
 // Route::post('/upload', [FileController::class, 'handleRequest'])->name('api.v1.file.upload');
 
@@ -211,6 +215,9 @@ Route::middleware('auth:sanctum', 'throttle:api', 'active')->prefix('v1')->group
             // Terms Routes
             Route::get('/terms', [SettingController::class, 'getTerms'])->withoutMiddleware(['role:admin|super_admin', 'auth:sanctum']);
             Route::post('/terms', [SettingController::class, 'updateTerms']);
+            //privacy policy
+            Route::get('/privacy-policy', [SettingController::class, 'getPrivacyPolicy'])->withoutMiddleware(['role:admin|super_admin', 'auth:sanctum']);
+            Route::post('/privacy-policy', [SettingController::class, 'updatePrivacyPolicy']);
 
             // Contact Info Routes
             Route::get('/contact-info', [SettingController::class, 'getContactInfo'])->withoutMiddleware(['role:admin|super_admin', 'auth:sanctum']);
@@ -222,6 +229,10 @@ Route::middleware('auth:sanctum', 'throttle:api', 'active')->prefix('v1')->group
 
             // faq
             Route::apiResource('faqs', FaqController::class);
+
+            //support ticket
+            Route::get('/support/tickets', [SupportTicketController::class, 'index']);
+            Route::patch('/support/tickets/{id}/status', [SupportTicketController::class, 'updateStatus']);
         });
     });
 

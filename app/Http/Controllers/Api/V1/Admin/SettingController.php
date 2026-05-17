@@ -29,6 +29,23 @@ class SettingController extends Controller
         return response_success('Terms updated successfully.');
     }
 
+    //privacy policy
+    public function getPrivacyPolicy()
+    {
+        $content = Setting::where('key', 'privacy_policy')->value('value') ?? '';
+
+        return response_success('Privacy policy fetched successfully.', $content);
+    }
+    public function updatePrivacyPolicy(Request $request)
+    {
+        $request->validate(['content' => 'required|string']);
+        Setting::updateOrCreate(
+            ['key' => 'privacy_policy'],
+            ['value' => $request->content]
+        );
+        return response_success('Privacy policy updated successfully.');
+    }
+
     // ======================================================
     // CONTACT INFO (SOCIAL LINKS)
     // ======================================================
@@ -188,4 +205,6 @@ class SettingController extends Controller
             'tax_percentage' => (float) $taxPercentage,
         ]);
     }
+
+    
 }
