@@ -88,28 +88,28 @@ Route::middleware('auth:sanctum', 'throttle:api', 'active')->prefix('v1')->group
     /**
      ** Chat Module Routes
      */
-    Route::prefix('chat')->name('api.v1.chat.')->group(function () {
-        // Conversations
-        Route::get('/conversations', [ConversationController::class, 'index'])->name('conversations.index');
-        Route::post('/conversations', [ConversationController::class, 'store'])->name('conversations.store');
+    // Route::prefix('chat')->name('api.v1.chat.')->group(function () {
+    //     // Conversations
+    //     Route::get('/conversations', [ConversationController::class, 'index'])->name('conversations.index');
+    //     Route::post('/conversations', [ConversationController::class, 'store'])->name('conversations.store');
 
-        // Messages
-        Route::get('/conversations/{conversation}/messages', [MessageController::class, 'index'])->name('messages.index');
-        Route::post('/messages', [MessageController::class, 'store'])->name('messages.store');
-        Route::patch('/messages/{message}', [MessageController::class, 'update'])->name('messages.update');
-        Route::delete('/messages/{message}', [MessageController::class, 'destroy'])->name('messages.destroy');
-        Route::post('/messages/read', [MessageController::class, 'markAsRead'])->name('messages.read');
+    //     // Messages
+    //     Route::get('/conversations/{conversation}/messages', [MessageController::class, 'index'])->name('messages.index');
+    //     Route::post('/messages', [MessageController::class, 'store'])->name('messages.store');
+    //     Route::patch('/messages/{message}', [MessageController::class, 'update'])->name('messages.update');
+    //     Route::delete('/messages/{message}', [MessageController::class, 'destroy'])->name('messages.destroy');
+    //     Route::post('/messages/read', [MessageController::class, 'markAsRead'])->name('messages.read');
 
-        // Group Management
-        Route::post('/groups/{conversation}/members', [GroupController::class, 'addMember'])->name('groups.members.add');
-        Route::delete('/groups/{conversation}/members', [GroupController::class, 'removeMember'])->name('groups.members.remove');
-        Route::post('/groups/{conversation}/leave', [GroupController::class, 'leaveGroup'])->name('groups.leave');
-        Route::post('/groups/{conversation}/promote', [GroupController::class, 'promoteToAdmin'])->name('groups.promote');
-        Route::post('/groups/{conversation}/demote', [GroupController::class, 'demoteToMember'])->name('groups.demote');
+    //     // Group Management
+    //     Route::post('/groups/{conversation}/members', [GroupController::class, 'addMember'])->name('groups.members.add');
+    //     Route::delete('/groups/{conversation}/members', [GroupController::class, 'removeMember'])->name('groups.members.remove');
+    //     Route::post('/groups/{conversation}/leave', [GroupController::class, 'leaveGroup'])->name('groups.leave');
+    //     Route::post('/groups/{conversation}/promote', [GroupController::class, 'promoteToAdmin'])->name('groups.promote');
+    //     Route::post('/groups/{conversation}/demote', [GroupController::class, 'demoteToMember'])->name('groups.demote');
 
-        // Real-time
-        Route::post('/conversations/{conversation}/typing', [MessageController::class, 'typing'])->name('typing');
-    });
+    //     // Real-time
+    //     Route::post('/conversations/{conversation}/typing', [MessageController::class, 'typing'])->name('typing');
+    // });
 
 
     //**---Payment Method routes---**//
