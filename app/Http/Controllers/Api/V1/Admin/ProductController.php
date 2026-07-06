@@ -107,14 +107,17 @@ class ProductController extends Controller
     public function getCategories()
     {
         $categories = Product::select('category')->distinct()->pluck('category')->filter()->values();
-        if ($categories->contains('Uncategorized')) {
-            $categories = $categories->filter(function ($value) {
-                return $value !== 'Uncategorized';
-            })->values();
-        }
+        // if ($categories->contains('Uncategorized')) {
+        //     $categories = $categories->filter(function ($value) {
+        //         return $value !== 'Uncategorized';
+        //     })->values();
+        // }
         if ($categories->isEmpty()) {
             return response_error('No categories found', [], 404);
         }
+
+        $categories->prepend('All Product');
+
         return response_success('Categories retrieved successfully', $categories);
     }
 
