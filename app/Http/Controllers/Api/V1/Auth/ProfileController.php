@@ -37,4 +37,14 @@ class ProfileController extends Controller
             return response_error('Validation failed.', $e->errors(), 422);
         }
     }
+
+    public function destroy(Request $request)
+    {
+        try {
+            $this->authService->deleteAccount($request->user());
+            return response_success('Account deleted successfully.');
+        } catch (\Exception $e) {
+            return response_error('Failed to delete account.', ['error' => $e->getMessage()], 500);
+        }
+    }
 }

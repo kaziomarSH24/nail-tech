@@ -224,7 +224,7 @@ class AuthService
     /**
      * Updates the user's profile.
      */
-   public function updateProfile(User $user, Request $request): User
+    public function updateProfile(User $user, Request $request): User
     {
 
         $validatedData = $request->validated();
@@ -247,5 +247,29 @@ class AuthService
         $user->update($validatedData);
 
         return $user;
+    }
+
+    /**
+     * Anonymizes user data and logs them out for account deletion.
+     */
+    public function deleteAccount(User $user): void
+    {
+        // Delete avatar file if exists
+        if ($user->avatar) {
+            $this->deleteFile($user->avatar);
+        }
+
+        // Revoke all tokens to log the user out
+        $user->tokens()->delete();
+
+        // Anonymize personal data
+        $user->update([
+            'name' => 'Deleted User',
+            'email' => 'deleted_' . $user->id . '_' . Str::random(10) . '@deleted.com',
+            'phone' => null,
+            'avatar' => null,
+            'dob' => null,
+            'status' => 'inactive',
+        ]);
     }
 }

@@ -83,6 +83,7 @@ Route::middleware('auth:sanctum', 'throttle:api', 'active')->prefix('v1')->group
     Route::prefix('profile')->name('api.v1.profile.')->group(function () {
         Route::get('/me', [ProfileController::class, 'me'])->name('me');
         Route::post('/update', [ProfileController::class, 'updateProfile'])->name('update');
+        Route::delete('/delete-account', [ProfileController::class, 'destroy'])->name('destroy');
     });
 
     /**
