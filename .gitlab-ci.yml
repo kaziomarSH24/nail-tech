@@ -8,6 +8,8 @@ stages:
 
 build_and_push:
   stage: build-push
+  tags:
+    - linux
   only:
     - main
   script:
@@ -25,6 +27,8 @@ build_and_push:
 deploy_to_server:
   stage: deploy
   image: alpine:latest
+  tags:
+    - linux
   only:
     - main
   before_script:
