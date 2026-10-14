@@ -26,7 +26,10 @@ class Lesson extends Model
         }
 
         // Local/S3 Storage Link
-        return Storage::disk(config('filesystems.default'))->url($this->video_path);
+        $url = Storage::disk(config('filesystems.default'))->url($this->video_path);
+        return str_starts_with($url, 'http://') || str_starts_with($url, 'https://')
+            ? $url
+            : url($url);
     }
 
     public function getImageUrlAttribute()
@@ -35,6 +38,9 @@ class Lesson extends Model
             return null;
         }
 
-        return Storage::disk(config('filesystems.default'))->url($this->image_path);
+        $url = Storage::disk(config('filesystems.default'))->url($this->image_path);
+        return str_starts_with($url, 'http://') || str_starts_with($url, 'https://')
+            ? $url
+            : url($url);
     }
 }
