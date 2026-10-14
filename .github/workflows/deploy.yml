@@ -44,8 +44,7 @@ jobs:
             cd ${{ secrets.SERVER_DEPLOY_PATH || secrets.DEPLOY_PATH }}
             docker compose pull nails-app
             docker compose up -d --force-recreate nails-app
+            docker compose exec -T nails-nginx nginx -s reload
             docker compose exec -T nails-app php artisan optimize:clear
-            docker compose exec -T nails-app php artisan config:clear
-            docker compose exec -T nails-app php artisan route:clear
             docker compose exec -T nails-app php artisan migrate --force
             docker image prune -f
