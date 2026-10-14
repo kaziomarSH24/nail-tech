@@ -16,13 +16,21 @@ class LessonsRequest extends BaseRequest
     {
         return [
             'title' => ['required', 'string', 'max:255'],
+            'section_name' => ['nullable', 'string', 'max:255'],
+            'lesson_type' => ['nullable', Rule::in(['video', 'article', 'image'])],
             'description' => ['nullable', 'string'],
-            'video_type' => ['required', Rule::in(['upload', 'url'])],
-            'video_path' => ['required_if:video_type,upload', 'string'],
-            'video_url' => ['required_if:video_type,url', 'url'],
+
+            // Video fields (only required when lesson_type is video or not specified)
+            'video_type' => ['required_if:lesson_type,video', 'nullable', Rule::in(['upload', 'url'])],
+            'video_path' => ['required_if:video_type,upload', 'nullable', 'string'],
+            'video_url' => ['required_if:video_type,url', 'nullable', 'url'],
+
+            // Image field (for article/image lessons - direct file or path)
+            'image' => ['nullable', 'image', 'mimes:jpeg,png,jpg,webp,gif', 'max:10240'],
+            'image_path' => ['nullable', 'string'],
 
             'duration' => ['nullable', 'integer', 'min:0'],
-            'is_free_preview' => ['boolean'],
+            'is_free_preview' => ['nullable', 'boolean'],
             'sort_order' => ['nullable', 'integer'], 
         ];
     }

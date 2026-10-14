@@ -36,7 +36,7 @@ class CourseController extends Controller
 
         // Fetch enrolled courses through Enrollment model with pagination
         $enrollments = Enrollment::with(['course.lessons' => function ($q) {
-            $q->select('id', 'course_id', 'title', 'duration', 'is_free_preview');
+            $q->select('id', 'course_id', 'title', 'duration', 'is_free_preview', 'section_name', 'lesson_type', 'image_path', 'sort_order');
         }])
             ->where('user_id', $user->id)
             ->latest()
@@ -170,7 +170,8 @@ class CourseController extends Controller
     {
 
         $course = Course::withSum('lessons', 'duration')->with(['lessons' => function ($q) {
-            $q->select('id', 'course_id', 'title', 'duration', 'is_free_preview')
+            $q->select('id', 'course_id', 'title', 'duration', 'is_free_preview', 'section_name', 'lesson_type', 'image_path', 'sort_order')
+                ->orderBy('sort_order', 'asc')
                 ->orderBy('id', 'asc');
         }])
             ->where('is_published', true)
@@ -299,7 +300,7 @@ class CourseController extends Controller
 
         // My Subscriptions
         $enrollments = Enrollment::with(['course.lessons' => function ($q) {
-            $q->select('id', 'course_id', 'title', 'duration');
+            $q->select('id', 'course_id', 'title', 'duration', 'section_name', 'lesson_type', 'image_path', 'sort_order');
         }])
             ->where('user_id', $user->id)
             ->latest()
@@ -373,7 +374,7 @@ class CourseController extends Controller
         switch ($type) {
             case 'enrolled':
                 $query = Enrollment::with(['course.lessons' => function ($q) {
-                    $q->select('id', 'course_id', 'title', 'duration', 'is_free_preview');
+                    $q->select('id', 'course_id', 'title', 'duration', 'is_free_preview', 'section_name', 'lesson_type', 'image_path', 'sort_order');
                 }])
                     ->where('user_id', $user->id);
                 if (!empty($search)) {

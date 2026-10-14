@@ -11,6 +11,8 @@ use App\Services\CourseService;
 use App\Traits\ChunkUploadTrait;
 use App\Traits\FileUploadTrait;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
+
 
 class CourseController extends Controller
 {
@@ -134,12 +136,18 @@ class CourseController extends Controller
         return $this->handleChunkUpload($request, 'video_file', 'courses/videos', 'public', $allowedExtensions);
     }
 
+
     /**
      * Add Lesson to Course - Step 2
      */
     public function addLesson(LessonsRequest $request, $id)
     {
-        $lesson = $this->courseService->addLesson($id, $request->validated());
+        $data = $request->validated();
+        if ($request->hasFile('image')) {
+            $data['image_path'] = $this->handleFileUpload($request, 'image', 'courses/images');
+        }
+
+        $lesson = $this->courseService->addLesson($id, $data);
 
         return response_success('Lesson added successfully.', $lesson, 201);
     }
@@ -153,26 +161,43 @@ class CourseController extends Controller
         $lesson = $course->lessons()->findOrFail($lessonId);
 
         $data = $request->validated();
+        $lessonType = $data['lesson_type'] ?? $lesson->lesson_type ?? 'video';
 
         // Path logic resolve for update
-        if ($data['video_type'] === 'upload' && isset($data['video_path'])) {
-            $finalPath = $data['video_path'];
+        $finalPath = $lesson->video_path;
+        if ($lessonType === 'video') {
+            if (($data['video_type'] ?? '') === 'upload' && isset($data['video_path'])) {
+                $finalPath = $data['video_path'];
 
-            // Optional: Delete old video if new one is uploaded
-            if ($lesson->video_type === 'upload' && $lesson->video_path) {
-                $this->deleteFile($lesson->video_path);
+                if ($lesson->video_type === 'upload' && $lesson->video_path && $lesson->video_path !== $finalPath) {
+                    $this->deleteFile($lesson->video_path);
+                }
+            } elseif (($data['video_type'] ?? '') === 'url') {
+                $finalPath = $data['video_url'] ?? $lesson->video_path;
             }
-        } elseif ($data['video_type'] === 'url') {
-            $finalPath = $data['video_url'];
-        } else {
-            // If video type/path not changed, keep old path
-            $finalPath = $lesson->video_path;
+        }
+
+        // Image path update
+        $imagePath = $lesson->image_path;
+        if ($request->hasFile('image')) {
+            if ($lesson->image_path) {
+                $this->deleteFile($lesson->image_path);
+            }
+            $imagePath = $this->handleFileUpload($request, 'image', 'courses/images');
+        } elseif (isset($data['image_path'])) {
+            $imagePath = $data['image_path'];
+            if ($lesson->image_path && $lesson->image_path !== $imagePath) {
+                $this->deleteFile($lesson->image_path);
+            }
         }
 
         $lesson->update([
-            'title' => $data['title'],
-            'description' => $data['description'] ?? $lesson->description,
-            'video_type' => $data['video_type'],
+            'title' => $data['title'] ?? $lesson->title,
+            'section_name' => isset($data['section_name']) ? trim($data['section_name']) : $lesson->section_name,
+            'lesson_type' => $lessonType,
+            'description' => array_key_exists('description', $data) ? $data['description'] : $lesson->description,
+            'image_path' => $imagePath,
+            'video_type' => $data['video_type'] ?? $lesson->video_type,
             'video_path' => $finalPath,
             'duration' => $data['duration'] ?? $lesson->duration,
             'sort_order' => $data['sort_order'] ?? $lesson->sort_order,
@@ -194,6 +219,11 @@ class CourseController extends Controller
         if ($lesson->video_type === 'upload' && $lesson->video_path) {
             // Trait method to delete file
             $this->deleteFile($lesson->video_path);
+        }
+
+        // Delete associated image file if present
+        if ($lesson->image_path) {
+            $this->deleteFile($lesson->image_path);
         }
 
         $lesson->delete();

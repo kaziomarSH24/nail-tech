@@ -67,17 +67,27 @@ class CourseService extends BaseService
     {
         $course = $this->getById($courseId);
 
+        $lessonType = $data['lesson_type'] ?? 'video';
+
         // Path logic resolve
-        $finalPath = ($data['video_type'] === 'upload') ? ($data['video_path'] ?? null) : ($data['video_url'] ?? null);
+        $finalPath = null;
+        if ($lessonType === 'video' || !empty($data['video_type'])) {
+            $finalPath = (($data['video_type'] ?? 'upload') === 'upload')
+                ? ($data['video_path'] ?? null)
+                : ($data['video_url'] ?? null);
+        }
 
         return Lesson::create([
             'course_id' => $course->id,
+            'section_name' => !empty($data['section_name']) ? trim($data['section_name']) : 'General',
+            'lesson_type' => $lessonType,
             'title' => $data['title'],
             'description' => $data['description'] ?? null,
-            'video_type' => $data['video_type'],
+            'image_path' => $data['image_path'] ?? null,
+            'video_type' => $data['video_type'] ?? 'upload',
             'video_path' => $finalPath,
             'duration' => $data['duration'] ?? 0,
-            'sort_order' => $course->lessons()->count() + 1,
+            'sort_order' => $data['sort_order'] ?? ($course->lessons()->count() + 1),
             'is_free_preview' => $data['is_free_preview'] ?? false,
         ]);
     }
