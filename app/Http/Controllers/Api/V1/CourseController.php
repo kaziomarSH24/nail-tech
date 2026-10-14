@@ -28,7 +28,9 @@ class CourseController extends Controller
      */
     public function index()
     {
-        $courses = $this->courseService->getAll();
+        $courses = $this->courseService->getAll(function ($query) {
+            $query->withCount('lessons');
+        });
         if ($courses->isEmpty()) {
             return response_error('No courses found.', [], 404);
         }
