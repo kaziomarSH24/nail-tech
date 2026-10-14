@@ -40,8 +40,10 @@ deploy_to_server:
     - ssh-keyscan -H $SERVER_IP >> ~/.ssh/known_hosts
     - chmod 644 ~/.ssh/known_hosts
   script:
-    - ssh $SERVER_USER@$SERVER_IP "cd $SERVER_DEPLOY_PATH && docker compose pull"
-    - ssh $SERVER_USER@$SERVER_IP "cd $SERVER_DEPLOY_PATH && docker compose up -d"
+    - ssh $SERVER_USER@$SERVER_IP "cd $SERVER_DEPLOY_PATH && docker compose pull nails-app"
+    - ssh $SERVER_USER@$SERVER_IP "cd $SERVER_DEPLOY_PATH && docker compose up -d --force-recreate nails-app"
     - ssh $SERVER_USER@$SERVER_IP "cd $SERVER_DEPLOY_PATH && docker compose exec -T nails-app php artisan optimize:clear"
+    - ssh $SERVER_USER@$SERVER_IP "cd $SERVER_DEPLOY_PATH && docker compose exec -T nails-app php artisan config:clear"
+    - ssh $SERVER_USER@$SERVER_IP "cd $SERVER_DEPLOY_PATH && docker compose exec -T nails-app php artisan route:clear"
     - ssh $SERVER_USER@$SERVER_IP "cd $SERVER_DEPLOY_PATH && docker compose exec -T nails-app php artisan migrate --force"
     - ssh $SERVER_USER@$SERVER_IP "docker image prune -f"

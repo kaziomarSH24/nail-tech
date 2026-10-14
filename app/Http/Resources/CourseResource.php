@@ -36,22 +36,23 @@ class CourseResource extends JsonResource
         ];
     }
 
-    private function formatDuration()
+    private function formatDuration(): ?string
     {
+        $totalSeconds = (int) ($this->lessons_sum_duration ?? (isset($this->lessons) ? $this->lessons->sum('duration') : 0));
 
+        if ($totalSeconds <= 0) {
+            return null;
+        }
 
-        $totalSeconds = $this->lessons_sum_duration ?? $this->lessons->sum('duration');
-
-        if (!$totalSeconds) return '0m';
         $hours = floor($totalSeconds / 3600);
         $minutes = floor(($totalSeconds % 3600) / 60);
         $seconds = floor($totalSeconds % 60);
 
         if ($hours > 0) {
-            return "{$hours}h {$minutes}m {$seconds}s";
+            return $minutes > 0 ? "{$hours}h {$minutes}m" : "{$hours}h";
         }
         if ($minutes > 0) {
-            return "{$minutes}m {$seconds}s";
+            return $seconds > 0 ? "{$minutes}m {$seconds}s" : "{$minutes}m";
         }
 
         return "{$seconds}s";
