@@ -26,12 +26,20 @@ class LessonsRequest extends BaseRequest
             'video_url' => ['required_if:video_type,url', 'nullable', 'url'],
 
             // Image field (for article/image lessons - direct file or path)
-            'image' => ['nullable', 'image', 'mimes:jpeg,png,jpg,webp,gif', 'max:10240'],
+            'image' => ['nullable', 'file', 'mimes:jpeg,png,jpg,webp,gif,avif,svg', 'max:10240'],
             'image_path' => ['nullable', 'string'],
 
             'duration' => ['nullable', 'integer', 'min:0'],
             'is_free_preview' => ['nullable', 'boolean'],
             'sort_order' => ['nullable', 'integer'], 
+        ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            'image.mimes' => 'The image must be a valid image file (jpeg, png, jpg, webp, gif, avif, svg).',
+            'image.max' => 'The image size may not be greater than 10MB.',
         ];
     }
 }

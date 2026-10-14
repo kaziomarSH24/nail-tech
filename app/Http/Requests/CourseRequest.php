@@ -17,7 +17,7 @@ class CourseRequest extends BaseRequest
             'title' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
             'price' => ['required', 'numeric'],
-            'thumbnail' => ['nullable', 'image', 'max:10240'], // max 10MB
+            'thumbnail' => ['nullable', 'file', 'mimes:jpeg,png,jpg,webp,gif,avif,svg', 'max:10240'], // max 10MB
             'instructor' => ['required', 'string', 'max:255'],
             'reward_points' => ['nullable', 'integer'],
             'duration' => ['nullable', 'string', 'max:100'],
